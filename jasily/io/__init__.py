@@ -24,6 +24,10 @@ class FileSystem:
         ''' hard link item to dest path. '''
         raise NotImplementedError
 
+    def is_exists(self):
+        ''' check if this was exists. '''
+        raise NotImplementedError
+
 class Directory(FileSystem):
     ''' Directory object. '''
 
@@ -62,6 +66,9 @@ class Directory(FileSystem):
         for item in self.enumerate_items():
             item.hardlink(os.path.join(dest, item.path.name))
 
+    def is_exists(self):
+        return os.path.isdir(self.path.path)
+
 class File(FileSystem):
     ''' File object. '''
     def __init__(self, path):
@@ -85,7 +92,11 @@ class File(FileSystem):
         assert isinstance(dest, str)
         os.link(self._path.path, dest)
 
+    def is_exists(self):
+        return os.path.isdir(self.path.path)
+
 class Path:
+    ''' a path wrapper. '''
     def __init__(self, path):
         assert isinstance(path, str)
         self._path = path
