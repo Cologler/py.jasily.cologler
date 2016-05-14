@@ -15,6 +15,9 @@ class FileSystem:
     def __init__(self, path):
         self._path = path if isinstance(path, Path) else Path(path)
 
+    def __str__(self):
+        return str(self._path)
+
     @property
     def path(self):
         ''' return a Path object. '''
@@ -27,6 +30,30 @@ class FileSystem:
     def is_exists(self):
         ''' check if this was exists. '''
         raise NotImplementedError
+
+    def is_directory(self):
+        ''' check if this is a exists directory. '''
+        return False
+
+    def is_file(self):
+        ''' check if this is a exists file. '''
+        return False
+
+    @classmethod
+    def from_path(cls, path):
+        ''' create instance from path. '''
+        if os.path.isdir(path):
+            return Directory(path)
+        elif os.path.isfile(path):
+            return File(path)
+        else:
+            return FileSystem(path)
+
+    def rename_without_extension(self, name):
+        ''' rename this item without extension. '''
+        path = self.path.rename_without_extension(name)
+        os.rename(self.path.path, path.path)
+        self.path = path
 
 class Directory(FileSystem):
     ''' Directory object. '''
@@ -69,6 +96,10 @@ class Directory(FileSystem):
     def is_exists(self):
         return os.path.isdir(self.path.path)
 
+    def is_directory(self):
+        ''' check if this is a exists directory. '''
+        return self.is_exists()
+
 class File(FileSystem):
     ''' File object. '''
     def __init__(self, path):
@@ -93,10 +124,13 @@ class File(FileSystem):
         os.link(self._path.path, dest)
 
     def is_exists(self):
-        return os.path.isdir(self.path.path)
+        return os.path.isfile(self.path.path)
+
+    def is_file(self):
+        return self.is_exists()
 
 class Path:
-    ''' a path wrapper. '''
+    ''' a immutable path wrapper. '''
     def __init__(self, path):
         assert isinstance(path, str)
         self._path = path
@@ -129,6 +163,9 @@ class Path:
     def extension(self):
         return self._extension
 
+    def is_extension_equals(self, other):
+        return self.extension.lower() == other.lower()
+
     def rename_name(self, name):
         path = os.path.join(self._dirname, name)
         return Path(path)
@@ -142,3 +179,4 @@ class Path:
             extension = '.' + extension
         path = os.path.join(self._dirname, self.name_without_extension + extension)
         return Path(path)
+
