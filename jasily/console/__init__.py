@@ -8,7 +8,17 @@
 
 import re
 
+class MissingArgumentError(Exception):
+    ''' missing argument. '''
+    def __init__(self, argument_name):
+        super().__init__()
+        self._argument_name = argument_name
+
+    def __str__(self):
+        return 'missing argument ' + self._argument_name
+
 class ArgumentsParser:
+    ''' command arguments parser. '''
     mode = re.compile(r'^--?([^-=]+)(?:[:=]([^=]*))?$')
 
     def __init__(self, argv):
@@ -17,6 +27,9 @@ class ArgumentsParser:
         self._parsed_argv = []
         for arg in argv:
             self._parse(arg)
+
+    def __len__(self):
+        return len(self._argv)
 
     def _parse(self, arg):
         assert isinstance(arg, str)
@@ -31,6 +44,10 @@ class ArgumentsParser:
             groups = match.groups()
             self._parsed_argv.append(groups)
 
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            return self._argv[index]
+
     def __iter__(self):
         return self.keys()
 
@@ -41,11 +58,22 @@ class ArgumentsParser:
         return False
 
     def get(self, key, default=None):
+        ''' get argument value by key. if not found, return default value. '''
+        assert isinstance(key, str)
         for item in self._parsed_argv:
             if isinstance(item, tuple):
                 if item[0] == key:
                     return item[1]
         return default
+
+    def get_or_error(self, key):
+        ''' get argument value by key. if not found, raise MissingArgumentError. '''
+        assert isinstance(key, str)
+        ret = self.get(key, None)
+        if ret is None:
+            raise MissingArgumentError(key)
+        else:
+            return ret
 
     def keys(self):
         for item in self._parsed_argv:
