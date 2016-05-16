@@ -53,7 +53,7 @@ class FileSystem:
         ''' rename this item without extension. '''
         path = self.path.rename_without_extension(name)
         os.rename(self.path.path, path.path)
-        self.path = path
+        self._path = path
 
 class Directory(FileSystem):
     ''' Directory object. '''
