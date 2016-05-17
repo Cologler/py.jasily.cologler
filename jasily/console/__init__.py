@@ -47,6 +47,8 @@ class ArgumentsParser:
     def __getitem__(self, index):
         if isinstance(index, int):
             return self._argv[index]
+        elif isinstance(index, str):
+            return self.get_or_error(index)
 
     def __iter__(self):
         return self.keys()
