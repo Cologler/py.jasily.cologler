@@ -11,8 +11,20 @@ from jasily.console import ArgumentsParser
 from jasily.console import MissingArgumentError
 
 class CommandDefinitionError(Exception):
+    '''user program error.'''
     def __init__(self, msg):
+        super().__init__()
         self._msg = msg
+
+    def __str__(self):
+        return self._msg
+
+class CommandRunningError(Exception):
+    '''command end without finish. this Exception can safe call in command.'''
+    def __init__(self, msg):
+        super().__init__()
+        self._msg = msg
+
     def __str__(self):
         return self._msg
 
@@ -28,9 +40,9 @@ def command(alias=[], desc=None):
             argspec = inspect.getfullargspec(func)
             if argspec[1] is None and argspec[2] is None:
                 args = argspec[0]
-                if len(args) < 2:
+                if len(args) < 1:
                     raise CommandDefinitionError(\
-                        'command must contains cmd & args as first & second parameter.')
+                        'command must contains session as first parameter.')
                 defs = argspec[3]
                 if defs is None:
                     self._require_args = list(args)
@@ -43,46 +55,62 @@ def command(alias=[], desc=None):
 
         @property
         def name(self):
+            '''get command name.'''
             return self._func.__name__
 
         def names(self):
+            '''yield command name and alias.'''
             yield self.name
             for name in self.alias:
                 yield name
 
         @property
         def alias(self):
+            '''get command alias.'''
             return self._alias
 
         @property
         def desc(self):
+            '''get command desc.'''
             return self._desc
-        
+
         @property
         def func(self):
             return self._func
-        
+
         @property
         def require_args(self):
-            return self._require_args[2:]
-        
+            '''get require args.'''
+            return self._require_args[1:]
+
         @property
         def optional_args(self):
+            '''get optional args.'''
             return list(self._optional_args)
-        
-        def execute(self, command, args):
-            assert isinstance(args, ArgumentsParser)
+
+        def execute(self, session):
+            '''execute command. possible raise CommandRunningError.'''
+            assert isinstance(session, CommandSession)
             exe_args = []
-            exe_args.append((self._require_args[0], command))
-            exe_args.append((self._require_args[1], args))
+            exe_args.append((self._require_args[0], session))
             for key in self.require_args:
+                arg_name = key
                 try:
-                    exe_args.append((key, args.get_or_error(key)))
+                    exe_args.append((arg_name, session.args_parser.get_or_error(key)))
                 except MissingArgumentError as err:
                     print('error on command %s : %s' % (self.name, err))
                     return
             for arg in self._optional_args:
-                exe_args.append((arg[0], args.get(arg[0], arg[1])))
+                arg_name = arg[0]
+                arg_defval = arg[1]
+                arg_val = session.args_parser.get(arg_name, arg_defval)
+                if arg_val != arg_defval and type(arg_val) != type(arg_defval):
+                    assert isinstance(arg_val, str)
+                    if isinstance(arg_defval, int):
+                        if not arg_val.isdigit():
+                            raise CommandRunningError('arg %s should be digit.' % arg_name)
+                        arg_val = int(arg_val)
+                exe_args.append((arg[0], arg_val))
             self.func(**dict(exe_args))
     return Meta
 
@@ -90,6 +118,29 @@ class _CommandWrapper:
     def __init__(self, cmd):
         self.command = cmd
         self.is_enable = True
+
+class CommandSession:
+    '''parameter of @command'''
+    def __init__(self, manager, args_parser):
+        assert isinstance(manager, CommandManager)
+        assert isinstance(args_parser, ArgumentsParser)
+        self._manager = manager
+        self._args_parser = args_parser
+
+    @property
+    def command_manager(self):
+        '''get caller CommandManager object.'''
+        return self._manager
+
+    @property
+    def args_parser(self):
+        '''get args parser for this session.'''
+        return self._args_parser
+
+    @property
+    def command(self):
+        '''get command text which route to current command.'''
+        return self._args_parser[1]
 
 class CommandManager:
     def __init__(self):
@@ -119,7 +170,11 @@ class CommandManager:
             print('unknown command: ' + args[1])
             self.print_commands()
             return False
-        wrapper.command.execute(args[1], args)
+        session = CommandSession(self, args)
+        try:
+            wrapper.command.execute(session)
+        except CommandRunningError as err:
+            print(str(err))
         return True
 
     def print_commands(self):

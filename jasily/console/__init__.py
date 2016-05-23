@@ -51,6 +51,7 @@ class ArgumentsParser:
         assert isinstance(argv, list)
         self._argv = argv
         self._parsed_argv = []
+        self._non_parsed_argv = []
         for arg in argv:
             self._parse(arg)
 
@@ -69,6 +70,8 @@ class ArgumentsParser:
         if not match is None:
             groups = match.groups()
             self._parsed_argv.append(groups)
+        else:
+            self._non_parsed_argv.append(arg)
 
     def __getitem__(self, index):
         if isinstance(index, int):
@@ -77,13 +80,16 @@ class ArgumentsParser:
             return self.get_or_error(index)
 
     def __iter__(self):
-        return self.keys()
+        return self._argv.__iter__()
 
     def __contains__(self, key):
         for item in self.keys():
             if item == key:
                 return True
         return False
+
+    def non_parsed_argv(self):
+        return self._non_parsed_argv.__iter__()
 
     def get(self, key, default=None):
         ''' get argument value by key. if not found, return default value. '''

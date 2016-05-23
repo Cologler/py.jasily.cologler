@@ -41,23 +41,44 @@ class FileSystem:
 
     @classmethod
     def from_path(cls, path):
-        ''' create instance from path. '''
+        '''create instance from path.'''
         if os.path.isdir(path):
             return Directory(path)
         elif os.path.isfile(path):
             return File(path)
         else:
-            return FileSystem(path)
+            return None
 
     def rename_without_extension(self, name):
-        ''' rename this item without extension. '''
+        '''rename this item without extension.'''
         path = self.path.rename_without_extension(name)
+        if self._path.path == path.path:
+            return
         os.rename(self.path.path, path.path)
         self._path = path
 
+    def rename(self, name):
+        '''rename this item.'''
+        path = self.path.rename(name)
+        if self._path.path == path.path:
+            return
+        os.rename(self.path.path, path.path)
+        self._path = path
+
+    def get_normal_name(self):
+        '''get normal name for item.
+           for folder, return full name;
+           for file, return name without extension.'''
+        raise NotImplementedError
+
+    def rename_normal(self, name):
+        '''normal rename name for item.
+           for folder, rename full name;
+           for file, rename name without extension.'''
+        raise NotImplementedError
+
 class Directory(FileSystem):
     ''' Directory object. '''
-
     def __init__(self, path):
         super().__init__(path)
 
@@ -100,6 +121,12 @@ class Directory(FileSystem):
         ''' check if this is a exists directory. '''
         return self.is_exists()
 
+    def get_normal_name(self):
+        return self.path.name
+
+    def rename_normal(self, name):
+        self.rename(name)
+
 class File(FileSystem):
     ''' File object. '''
     def __init__(self, path):
@@ -128,6 +155,16 @@ class File(FileSystem):
 
     def is_file(self):
         return self.is_exists()
+
+    def get_normal_name(self):
+        return self.path.name_without_extension
+
+    def rename_normal(self, name):
+        path = self.path.rename_without_extension(name)
+        if self._path.path == path.path:
+            return
+        os.rename(self.path.path, path.path)
+        self._path = path
 
 class Path:
     ''' a immutable path wrapper. '''
@@ -166,7 +203,7 @@ class Path:
     def is_extension_equals(self, other):
         return self.extension.lower() == other.lower()
 
-    def rename_name(self, name):
+    def rename(self, name):
         path = os.path.join(self._dirname, name)
         return Path(path)
 
