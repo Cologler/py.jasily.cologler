@@ -56,7 +56,7 @@ def command(alias=[], desc=None):
         @property
         def name(self):
             '''get command name.'''
-            return self._func.__name__
+            return self._func.__name__.replace('_', '-')
 
         def names(self):
             '''yield command name and alias.'''
@@ -157,6 +157,13 @@ class CommandManager:
             self._max_command_length = max(self._max_command_length, len(name_fixed))
             self._commands_mapper[name_fixed] = wrapper
         return self
+
+    def command(self, alias=[], desc=None):
+        '''create and register command.'''
+        cmd = command(alias, desc)
+        def wrap(func):
+            self.register(command(alias, desc)(func))
+        return wrap
 
     def execute(self, argv):
         '''execute command by argv.'''
