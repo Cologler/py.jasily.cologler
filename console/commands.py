@@ -7,7 +7,7 @@
 # ----------
 
 import inspect
-from jasily.console import ArgumentsParser
+from jasily.console import ConsoleArguments
 from jasily.console import MissingArgumentError
 
 class CommandDefinitionError(Exception):
@@ -96,14 +96,14 @@ def command(alias=[], desc=None):
             for key in self.require_args:
                 arg_name = key
                 try:
-                    exe_args.append((arg_name, session.args_parser.get_or_error(key)))
+                    exe_args.append((arg_name, session.args.get_or_error(key)))
                 except MissingArgumentError as err:
                     print('error on command %s : %s' % (self.name, err))
                     return
             for arg in self._optional_args:
                 arg_name = arg[0]
                 arg_defval = arg[1]
-                arg_val = session.args_parser.get(arg_name, arg_defval)
+                arg_val = session.args.get(arg_name, arg_defval)
                 if arg_val != arg_defval and type(arg_val) != type(arg_defval):
                     assert isinstance(arg_val, str)
                     if isinstance(arg_defval, int):
@@ -121,11 +121,11 @@ class _CommandWrapper:
 
 class CommandSession:
     '''parameter of @command'''
-    def __init__(self, manager, args_parser):
+    def __init__(self, manager, args):
         assert isinstance(manager, CommandManager)
-        assert isinstance(args_parser, ArgumentsParser)
+        assert isinstance(args, ConsoleArguments)
         self._manager = manager
-        self._args_parser = args_parser
+        self._args = args
 
     @property
     def command_manager(self):
@@ -133,14 +133,14 @@ class CommandSession:
         return self._manager
 
     @property
-    def args_parser(self):
+    def args(self):
         '''get args parser for this session.'''
-        return self._args_parser
+        return self._args
 
     @property
     def command(self):
         '''get command text which route to current command.'''
-        return self._args_parser[1]
+        return self._args[1]
 
 class CommandManager:
     def __init__(self):
@@ -167,7 +167,7 @@ class CommandManager:
 
     def execute(self, argv):
         '''execute command by argv.'''
-        args = ArgumentsParser(argv)
+        args = ConsoleArguments(argv)
         if len(args) < 2:
             print('missing command')
             self.print_commands()
@@ -181,7 +181,7 @@ class CommandManager:
         try:
             wrapper.command.execute(session)
         except CommandRunningError as err:
-            print(str(err))
+            print('error on command %s : %s' % (command, err))
         return True
 
     def print_commands(self):

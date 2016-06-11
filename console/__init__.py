@@ -43,8 +43,8 @@ class MissingArgumentError(Exception):
     def __str__(self):
         return 'missing argument ' + self._argument_name
 
-class ArgumentsParser:
-    ''' command arguments parser. '''
+class ConsoleArguments:
+    '''parse command arguments'''
     mode = re.compile(r'^--?([^-=]+)(?:[:=]([^=]*))?$')
 
     def __init__(self, argv):
@@ -122,4 +122,4 @@ class ArgumentsParser:
                 yield item[1]
 
 if __name__ == '__main__':
-    assert ArgumentsParser(['"-av=1d"']).get('av') == '1d'
+    assert ConsoleArguments(['"-av=1d"']).get('av') == '1d'
