@@ -77,6 +77,14 @@ class FileSystem:
            for file, rename name without extension.'''
         raise NotImplementedError
 
+    def move_to(self, dest_dir):
+        if isinstance(dest_dir, Directory):
+            dest_dir = dest_dir.path.path
+        assert isinstance(dest_dir, str)
+        new_path = Path(os.path.join(dest_dir, self.path.name))
+        os.rename(self.path.path, new_path.path)
+        self._path = new_path
+
 class Directory(FileSystem):
     ''' Directory object. '''
     def __init__(self, path):
