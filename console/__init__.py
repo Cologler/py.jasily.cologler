@@ -52,6 +52,7 @@ class ConsoleArguments:
         self._argv = argv
         self._parsed_argv = []
         self._non_parsed_argv = []
+        self._keys = set()
         for arg in argv:
             self._parse(arg)
 
@@ -70,6 +71,7 @@ class ConsoleArguments:
         if not match is None:
             groups = match.groups()
             self._parsed_argv.append(groups)
+            self._keys.add(groups[0])
         else:
             self._non_parsed_argv.append(arg)
 
@@ -83,21 +85,19 @@ class ConsoleArguments:
         return self._argv.__iter__()
 
     def __contains__(self, key):
-        for item in self.keys():
-            if item == key:
-                return True
-        return False
+        return key in self._keys
 
     def non_parsed_argv(self):
         return self._non_parsed_argv.__iter__()
 
     def get(self, key, default=None):
-        ''' get argument value by key. if not found, return default value. '''
+        '''get argument value by key. if not found, return default value.
+           if arg is flag like '-v', it will return a boolean True.'''
         assert isinstance(key, str)
         for item in self._parsed_argv:
             if isinstance(item, tuple):
                 if item[0] == key:
-                    return item[1]
+                    return item[1] if not item[1] is None else True
         return default
 
     def get_or_error(self, key):
@@ -110,11 +110,8 @@ class ConsoleArguments:
             return ret
 
     def keys(self):
-        for item in self._parsed_argv:
-            if isinstance(item, tuple):
-                yield item[0]
-            else:
-                yield item
+        for item in self._keys:
+            yield item
 
     def values(self):
         for item in self._parsed_argv:
