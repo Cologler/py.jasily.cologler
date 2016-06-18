@@ -57,6 +57,17 @@ class HashAlgorithm:
         ''' convert value to upper string. '''
         return ("%08x" % value).upper()
 
+    def calc_file(self, path):
+        '''a func to calc with a file hash sum.'''
+        with open(path, 'rb') as stream:
+            value = self.init_value()
+            while True:
+                buffer = stream.read(1024 * 64)
+                if len(buffer) == 0:
+                    break
+                value = self.next_value(buffer, value)
+            return self.to_string(value)
+
     @classmethod
     def create(cls, name):
         if name == 'crc32':
@@ -99,13 +110,4 @@ class Sha1Algorithm(HashAlgorithm):
         return value.hexdigest().upper()
 
 if __name__ == '__main__':
-    path = r'__init__.py'
-    crc32 = r'7F68B425'
-    sha1 = r'C93A9F9AF5AD2D072EB976025ABEDC3EB158608D'
-    calc = HashCalculator(path)
-    calc.register_algorithm(HashAlgorithm.create('crc32'))
-    calc.register_algorithm(HashAlgorithm.create('sha1'))
-    calc.execute()
-    assert calc.get_result('crc32') == crc32
-    assert calc.get_result('sha1') == sha1
-    print('test passed.')
+    pass
