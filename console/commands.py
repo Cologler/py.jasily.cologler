@@ -54,6 +54,9 @@ class CommandDefinition:
         else:
             raise CommandDefinitionError('command cannot contains varargs or varkeywords')
 
+    def __str__(self):
+        return self.name
+
     @property
     def name(self):
         '''get command name.'''
@@ -293,7 +296,7 @@ class CommandManager:
         try:
             wrapper.command.execute(session)
         except CommandRunningError as err:
-            print('error on command %s : %s' % (command, err))
+            print('error on command %s : %s' % (wrapper.command.name, err))
         return True
 
     def print_commands(self):
