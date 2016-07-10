@@ -135,6 +135,13 @@ class Directory(FileSystem):
     def rename_normal(self, name):
         self.rename(name)
 
+def format_size(size):
+    level = 0
+    while size > 1024:
+        size /= 1024
+        level += 1
+    return '%.3f %s' % (size, UNIT_BYTES[level])
+
 class File(FileSystem):
     ''' File object. '''
     def __init__(self, path):
@@ -145,12 +152,7 @@ class File(FileSystem):
         return os.path.getsize(self._path.path)
 
     def format_size(self):
-        size = self.size
-        level = 0
-        while size > 1024:
-            size /= 1024
-            level += 1
-        return '%.3f %s' % (size, UNIT_BYTES[level])
+        return format_size(self.size)
 
     def hardlink(self, dest):
         if isinstance(dest, Path):
