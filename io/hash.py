@@ -70,11 +70,17 @@ class HashAlgorithm:
 
     @classmethod
     def create(cls, name):
+        name = name.lower()
         if name == 'crc32':
             return Crc32Algorithm()
         if name == 'sha1':
             return Sha1Algorithm()
-        raise NotImplementedError
+        if name == 'md5':
+            return Sha1Algorithm()
+        alg = __HashlibHashAlgorithm.try_create(name)
+        if not alg is None:
+            return alg
+        raise NotImplementedError        
 
 class Crc32Algorithm(HashAlgorithm):
     def __init__(self):
@@ -94,13 +100,16 @@ class Crc32Algorithm(HashAlgorithm):
             crc &= 0xffffffff
         return crc
 
-class Sha1Algorithm(HashAlgorithm):
+class __HashlibHashAlgorithm(HashAlgorithm):
+    def __init__(self, name):
+        self._name = name
+
     @property
     def name(self):
-        return 'sha1'
+        return self._name
 
     def init_value(self):
-        return hashlib.sha1()
+        return hashlib.new(self._name)
 
     def next_value(self, buffer, last_value):
         last_value.update(buffer)
@@ -108,6 +117,22 @@ class Sha1Algorithm(HashAlgorithm):
 
     def to_string(self, value):
         return value.hexdigest().upper()
+
+    @staticmethod
+    def try_create(name):
+        try:
+            hashlib.new(name)
+            return __HashlibHashAlgorithm(name)
+        except ValueError:
+            return None
+
+class Sha1Algorithm(__HashlibHashAlgorithm):
+    def __init__(self):
+        super().__init__('sha1')
+
+class Md5Algorithm(__HashlibHashAlgorithm):
+    def __init__(self):
+        super().__init__('md5')
 
 if __name__ == '__main__':
     pass
