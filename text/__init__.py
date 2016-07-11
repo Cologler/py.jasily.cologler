@@ -9,56 +9,53 @@
 import textwrap
 from contextlib import contextmanager
 
-class _BaseTextWrapper:
-    def __init__(self):
-        self.predicate = None
-
-    def wrap_text(self, text):
-        if self.predicate is None or self.predicate(text):
-            return self._wrap_core(text)
-        else:
-            return text
-
-    def _wrap_core(self, text): raise NotImplementedError
-
-class _BasicTextWrapper(_BaseTextWrapper):
-    def _wrap_core(self, text):
-        return text
+class ContextOfTextWrapper:
+    def __init__(self, printer):
+        self._printer = printer        
+    def __enter__(self):
+        pass
+    def __exit__(self, *args):
+        pass
 
 class TextPrinter:
     '''a [with statement]s wrap for textwrap'''
     def __init__(self):
-        self._wrappers = [_BasicTextWrapper()]
-        
-        printer = self
+        self._text_wrapper = textwrap.TextWrapper(replace_whitespace=False)
 
-        class Releaser:
+    def print(self, text):
+        print(self._text_wrapper.fill(text))
+
+    def set(self, **kwargs):
+        class SetContextOfTextWrapper(ContextOfTextWrapper):
+            def __init__(self, printer):
+                super().__init__(printer)
+                self._old_values = {}
             def __enter__(self):
-                return printer
+                for key in kwargs:
+                    self._old_values[key] = getattr(self._printer._text_wrapper, key)
+                    setattr(self._printer._text_wrapper, key, kwargs[key])
             def __exit__(self, *args):
-                printer._wrappers.pop()
+                for key in self._old_values:
+                    setattr(self._printer._text_wrapper, key, self._old_values[key])
+        return SetContextOfTextWrapper(self)
 
-        self._releaser = Releaser()
+    def add(self, **kwargs):
+        class AddContextOfTextWrapper(ContextOfTextWrapper):
+            def __init__(self, printer):
+                super().__init__(printer)
+                self._old_values = {}
+            def __enter__(self):
+                for key in kwargs:
+                    old = getattr(self._printer._text_wrapper, key)
+                    self._old_values[key] = old
+                    setattr(self._printer._text_wrapper, key, old + kwargs[key])
+            def __exit__(self, *args):
+                for key in self._old_values:
+                    setattr(self._printer._text_wrapper, key, self._old_values[key])
+        return AddContextOfTextWrapper(self)
 
-    def __enter(self, wrapper):
-        self._wrappers.append(wrapper)
-        return self._releaser
+    def indent(self, prefix):
+        return self.set(initial_indent=prefix, subsequent_indent=prefix)
 
-    def print(self, text):        
-        wrappers = self._wrappers.copy()
-        while len(wrappers) > 0:
-            text = wrappers.pop().wrap_text(text)
-        print(text)
-
-    def indent(self, prefix, predicate=None):
-
-        class _IndentTextWrapper(_BaseTextWrapper):
-            def __init__(self, prefix):
-                super().__init__()
-                self._prefix = prefix
-            def _wrap_core(self, text):
-                return textwrap.indent(text, self._prefix, predicate=self.predicate)
-        
-        wrapper = _IndentTextWrapper(prefix)
-        wrapper.predicate = predicate
-        return self.__enter(wrapper)
+    def indent_inc(self, prefix):
+        return self.add(initial_indent=prefix, subsequent_indent=prefix)
