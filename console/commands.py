@@ -35,8 +35,12 @@ class CommandDefinition:
         self._func = func
         self._alias = alias
         self._enable_sorted_args = False
-        self._all_args = set()
+
+        '''set() for args name. is useful for check if arg is exists.'''
+        self._args_name = set()
         self._args_alias = {}
+        self._args_desc = {}
+
         argspec = inspect.getfullargspec(func)
         if argspec[1] is None and argspec[2] is None:
             args = argspec[0]
@@ -51,7 +55,7 @@ class CommandDefinition:
                 self._require_args = args[:-len(defs)]
                 self._optional_args = list(zip(args[-len(defs):], defs))
             for arg in args:
-                self._all_args.add(arg)
+                self._args_name.add(arg)
         else:
             raise CommandDefinitionError('command cannot contains varargs or varkeywords')
 
@@ -74,13 +78,6 @@ class CommandDefinition:
         '''get command alias.'''
         return self._alias
 
-    def add_arg_alias(self, arg, alias):
-        assert isinstance(alias, str)
-        if arg in self._all_args:
-            self._args_alias.setdefault(arg, []).append(alias)
-        else:
-            raise KeyError
-
     @property
     def desc(self):
         '''get command desc.'''
@@ -89,6 +86,25 @@ class CommandDefinition:
     @desc.setter
     def desc(self, value):
         self._desc = value
+
+    ########################## arg ##########################
+
+    def __check_argname(self, arg):
+        if not arg in self._args_name: raise KeyError
+
+    def arg_add_alias(self, arg, alias):
+        assert isinstance(alias, str)
+        self.__check_argname(arg)
+        self._args_alias.setdefault(arg, []).append(alias)
+
+    def arg_set_desc(self, arg, desc):
+        assert isinstance(desc, str)
+        self.__check_argname(arg)
+        self._args_desc[arg] = desc
+
+    def arg_get_desc(self, arg):
+        self.__check_argname(arg)
+        return self._args_desc.get(arg, '')
 
     @property
     def func(self):
@@ -193,17 +209,25 @@ class CommandDefinition:
         self.func(**dict(exe_args))
 
 def arg_alias(**args):
-    '''add arg alias to desc to command.'''
+    '''add arg alias to command.'''
     def wrap(cmd: CommandDefinition):
         for arg in args:
             val = args[arg]
             if isinstance(val, str):
-                cmd.add_arg_alias(arg, val)
+                cmd.arg_add_alias(arg, val)
             elif isinstance(val, list):
                 for x in val:
-                    cmd.add_arg_alias(arg, x)
+                    cmd.arg_add_alias(arg, x)
             else:
                 raise TypeError
+        return cmd
+    return wrap
+
+def arg_desc(**args):
+    '''add arg desc to command.'''
+    def wrap(cmd: CommandDefinition):
+        for arg in args:
+            cmd.arg_set_desc(arg, args[arg])
         return cmd
     return wrap
 
@@ -300,49 +324,57 @@ class CommandManager:
             print('error on command %s : %s' % (wrapper.command.name, err))
         return True
 
-    def print_command(self, cmd):
+    def print_command(self, cmd, indent=0):
+        FIELD_INDENT = 15
         printer = TextPrinter()
-        with printer.indent_inc('   '):
-            prefix = ' ' * self._max_command_length + '\t'
-            first_prefix = cmd.name.ljust(self._max_command_length) + '\t'
-            with printer.indent_inc(prefix, first_prefix):
+        def alias_of_arg(name):
+            yield name
+            if name in cmd._args_alias:
+                for a in cmd._args_alias[name]:
+                    yield a
+        def print_optional():
+            if len(cmd.optional_args) > 0:
+                with printer.indent_inc('', 'options:', FIELD_INDENT):
+                    for n, v in cmd.optional_args:
+                        adef = '-%s=%s' % ('|'.join(alias_of_arg(n)), v)
+                        desc = cmd.arg_get_desc(n)
+                        if desc != '':
+                            printer.print(adef + '   ' + desc)
+                        else:
+                            printer.print(adef)
+                        #printer.print(adef + cmd.arg_get_desc(n))
+        with printer.indent_inc(' ' * indent):
+            printer.print(cmd.name)
+            with printer.indent_inc(' ' * 3):
                 printer.print(cmd.desc)
-            with printer.indent_inc(prefix):
-                FIELD_INDENT = 12
-                cmd_format_array = [cmd.name]
-                if len(cmd.require_args) + len(cmd.optional_args) > 0:
-                    def alias_of_arg(name):
-                        yield name
-                        if name in cmd._args_alias:
-                            for a in cmd._args_alias[name]:
-                                yield a
-                    if not cmd._enable_sorted_args:
-                        if len(cmd.require_args) > 0:
-                            with printer.indent_inc('', 'requires:', FIELD_INDENT):
-                                requires = ['[-%s]' % '|'.join(alias_of_arg(n)) for n in cmd.require_args]
-                                requires = ' '.join(requires)
-                                printer.print(requires)
-                    optionals_array = []
-                    if len(cmd.optional_args) > 0:
-                        optionals_array = ['[-%s=%s]' % ('|'.join(alias_of_arg(n)), v)
-                            for n, v in cmd.optional_args]
-                        cmd_format_array += optionals_array
-                    if cmd._enable_sorted_args:
-                        requires_array = [x.upper() for x in cmd.require_args]
-                        cmd_format_array += requires_array
-                    else:
-                        if len(optionals_array) > 0:
-                            with printer.indent_inc('', 'optional:', FIELD_INDENT):
-                                printer.print(' '.join(optionals_array))
-                with printer.indent_inc('', 'format:', FIELD_INDENT):
-                    printer.print(' '.join(cmd_format_array))
-                if len(cmd.alias) > 0:
-                    with printer.indent_inc('', 'alias:', FIELD_INDENT):
-                        printer.print(', '.join(cmd.alias))
+                with printer.indent_inc(' ' * 5):                
+                    cmd_format_array = [cmd.name]
+                    if len(cmd.require_args) + len(cmd.optional_args) > 0:                    
+                        if not cmd._enable_sorted_args:
+                            if len(cmd.require_args) > 0:
+                                with printer.indent_inc('', 'requires:', FIELD_INDENT):
+                                    requires = ['[-%s]' % '|'.join(alias_of_arg(n)) for n in cmd.require_args]
+                                    requires = ' '.join(requires)
+                                    printer.print(requires)
+                        optionals_array = []
+                        if len(cmd.optional_args) > 0:
+                            optionals_array = ['[-%s=%s]' % ('|'.join(alias_of_arg(n)), v)
+                                for n, v in cmd.optional_args]
+                            cmd_format_array += optionals_array
+                        if cmd._enable_sorted_args:
+                            requires_array = [x.upper() for x in cmd.require_args]
+                            cmd_format_array += requires_array
+                        else:
+                            print_optional()
+                    with printer.indent_inc('', 'format:', FIELD_INDENT):
+                        printer.print(' '.join(cmd_format_array))
+                    if len(cmd.alias) > 0:
+                        with printer.indent_inc('', 'alias:', FIELD_INDENT):
+                            printer.print(', '.join(cmd.alias))
 
     def print_commands(self):
         print('usage:')
         for cmd in [x.command for x in self._commands if x.is_enable]:
-            self.print_command(cmd)
+            self.print_command(cmd, 3)
             print()
 
