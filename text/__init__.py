@@ -22,8 +22,11 @@ class TextPrinter:
     def __init__(self):
         self._text_wrapper = textwrap.TextWrapper(replace_whitespace=False)
 
-    def print(self, text):
-        print(self._text_wrapper.fill(text))
+    def print(self, text, sep=' ', end='\n', flush=False):
+        print(self.format(text), sep=sep, end=end, flush=flush)
+
+    def format(self, text):
+        return self._text_wrapper.fill(text)
 
     def __enter__(self):
         return self
@@ -60,8 +63,16 @@ class TextPrinter:
                     setattr(self._printer._text_wrapper, key, self._old_values[key])
         return AddContextOfTextWrapper(self)
 
-    def indent(self, prefix):
-        return self.set(initial_indent=prefix, subsequent_indent=prefix)
+    def indent(self, prefix, first_prefix=None, fixed_width=None):
+        first_prefix = first_prefix or prefix
+        if not fixed_width is None:
+            prefix = prefix.ljust(fixed_width)
+            first_prefix = first_prefix.ljust(fixed_width)
+        return self.set(initial_indent=first_prefix, subsequent_indent=prefix)
 
-    def indent_inc(self, prefix):
-        return self.add(initial_indent=prefix, subsequent_indent=prefix)
+    def indent_inc(self, prefix, first_prefix=None, fixed_width=None):
+        first_prefix = first_prefix or prefix
+        if not fixed_width is None:
+            prefix = prefix.ljust(fixed_width)
+            first_prefix = first_prefix.ljust(fixed_width)
+        return self.add(initial_indent=first_prefix, subsequent_indent=prefix)

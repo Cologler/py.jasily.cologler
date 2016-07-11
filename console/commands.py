@@ -9,6 +9,7 @@
 import inspect
 from jasily.console import ConsoleArguments
 from jasily.console import MissingArgumentError
+from jasily.text import TextPrinter
 
 class CommandDefinitionError(Exception):
     '''user program error.'''
@@ -299,53 +300,49 @@ class CommandManager:
             print('error on command %s : %s' % (wrapper.command.name, err))
         return True
 
+    def print_command(self, cmd):
+        printer = TextPrinter()
+        with printer.indent_inc('   '):
+            prefix = ' ' * self._max_command_length + '\t'
+            first_prefix = cmd.name.ljust(self._max_command_length) + '\t'
+            with printer.indent_inc(prefix, first_prefix):
+                printer.print(cmd.desc)
+            with printer.indent_inc(prefix):
+                FIELD_INDENT = 12
+                cmd_format_array = [cmd.name]
+                if len(cmd.require_args) + len(cmd.optional_args) > 0:
+                    def alias_of_arg(name):
+                        yield name
+                        if name in cmd._args_alias:
+                            for a in cmd._args_alias[name]:
+                                yield a
+                    if not cmd._enable_sorted_args:
+                        if len(cmd.require_args) > 0:
+                            with printer.indent_inc('', 'requires:', FIELD_INDENT):
+                                requires = ['[-%s]' % '|'.join(alias_of_arg(n)) for n in cmd.require_args]
+                                requires = ' '.join(requires)
+                                printer.print(requires)
+                    optionals_array = []
+                    if len(cmd.optional_args) > 0:
+                        optionals_array = ['[-%s=%s]' % ('|'.join(alias_of_arg(n)), v)
+                            for n, v in cmd.optional_args]
+                        cmd_format_array += optionals_array
+                    if cmd._enable_sorted_args:
+                        requires_array = [x.upper() for x in cmd.require_args]
+                        cmd_format_array += requires_array
+                    else:
+                        if len(optionals_array) > 0:
+                            with printer.indent_inc('', 'optional:', FIELD_INDENT):
+                                printer.print(' '.join(optionals_array))
+                with printer.indent_inc('', 'format:', FIELD_INDENT):
+                    printer.print(' '.join(cmd_format_array))
+                if len(cmd.alias) > 0:
+                    with printer.indent_inc('', 'alias:', FIELD_INDENT):
+                        printer.print(', '.join(cmd.alias))
+
     def print_commands(self):
         print('usage:')
         for cmd in [x.command for x in self._commands if x.is_enable]:
-            name = ('   ' + cmd.name).ljust(self._max_command_length) + '\t' + cmd.desc
-            print(name)
-            padding = ''.ljust(self._max_command_length) + '\t'
-            buffer_max = 80
-            formater = 'format: %s ' % cmd.name
-            def build_arg_name(name):
-                if name in cmd._args_alias:
-                    name += '|' + '|'.join(cmd._args_alias[name])
-                return name
-            if len(cmd.require_args) + len(cmd.optional_args) > 0:
-                list_of_optionals = []
-                for name, defval in cmd.optional_args:
-                    name = build_arg_name(name)
-                    list_of_optionals.append('[-%s=%s]' % (name, defval))
-                if len(list_of_optionals) > 0:
-                    formater += ' '.join(list_of_optionals) + ' '
-                if cmd._enable_sorted_args:
-                    # format
-                    formater += ' '.join([x.upper() for x in cmd.require_args])
-                else:
-                    # parameter
-                    if len(cmd.require_args) > 0:
-                        buffer = 'require: '
-                        for arg in ['-%s' % build_arg_name(z) for z in cmd.require_args]:
-                            formater += '%s=? ' % arg
-                            if len(arg) + len(buffer) > buffer_max:
-                                print(padding + buffer)
-                                buffer = ''
-                            buffer += (' ' + arg if len(buffer) > 0 else arg)
-                        if len(buffer) > 0:
-                            print(padding + buffer)
-                            buffer = ''
-                    if len(cmd.optional_args) > 0:
-                        buffer = 'optional: '
-                        for arg in list_of_optionals:
-                            if len(arg) + len(buffer) > buffer_max:
-                                print(padding + buffer)
-                                buffer = ''
-                            buffer += (' ' + arg if len(buffer) > 0 else arg)
-                        if len(buffer) > 0:
-                            print(padding + buffer)
-                            buffer = ''
-                    if len(cmd.alias) > 0:
-                        print(' ' * 6 + 'alias: ' + ', '.join(cmd.alias))
-                print(padding + formater)
+            self.print_command(cmd)
             print()
 
