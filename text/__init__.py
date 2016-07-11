@@ -25,6 +25,12 @@ class TextPrinter:
     def print(self, text):
         print(self._text_wrapper.fill(text))
 
+    def __enter__(self):
+        return self
+        
+    def __exit__(self, *args):
+        pass
+
     def set(self, **kwargs):
         class SetContextOfTextWrapper(ContextOfTextWrapper):
             def __init__(self, printer):
