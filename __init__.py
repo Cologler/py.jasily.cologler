@@ -59,33 +59,39 @@ def type_check(value, *checkers, name=None):
 # check func parameter for func annotation
 #####
 
-def __check_type(arg, tp):
-    if not isinstance(arg, tp):
-        raise TypeError("%s is not of type %s" % (arg, tp.__name__))
+def _check_type(name, value, tp,
+        raise_error=True):
+    if value is None and tp is None:
+        return True
+    if isinstance(value, tp):
+        return True
+    if raise_error:
+        n = '/'.join([x.__name__ for x in tp]) if isinstance(tp, tuple) else tp.__name__
+        v = value
+        raise TypeError("%s type error (expected %s, got %s)" % (
+            name, n, v))
+    else:
+        return False
 
-def __check_annotation(arg, a):
-    if isinstance(a, type):
-        return __check_type(arg, a)    
-    __check_type(arg, type(a)) 
-    if '__iter__' in dir(a): # annotation is some kind of tuple/list ?
-        l1 = list(arg)
-        l2 = list(a)
-        if len(l1) != len(l2):
-            if len(l1) > len(l2):
-                raise ValueError(
-                    'too many values to unpack (expected %s)' % len(l2))
-            else:
-                raise ValueError(
-                    'not enough values to unpack (expected %s, got %s)' % (len(l2), len(l1)))
-        for l, r in zip(l1, l2):
-            __check_annotation(l, r)
-
-def checkargs(func):
-    '''check method args by annotation.'''
+def check_annotation(func):
+    '''
+    check method args by annotation.
+    accept:
+        func(arg: str)
+        func(arg: (str, int)) # or
+        func(arg: None)
+    not-accept:
+        func(arg: (None, )) # None in tuple
+    same as parameter and return value.
+    '''
     def _f(*args):
         for index, arg in enumerate(inspect.getfullargspec(func)[0]):
-            if arg in func.__annotations__[arg]:
-                __check_annotation(args[index], func.__annotations__[arg])
-        return func(*args)
+            if arg in func.__annotations__:
+                _check_type(arg, args[index], func.__annotations__[arg])
+        ret = func(*args)
+        if 'return' in func.__annotations__:
+            _check_type('return value', ret, func.__annotations__['return'])
+        return ret
     _f.__doc__ = func.__doc__
     return _f
+    
