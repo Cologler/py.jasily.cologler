@@ -12,8 +12,6 @@ from ..convert import StringConverter
 from ..convert import ConvertError
 from ..text import TextPrinter
 from . import ConsoleArguments
-from . import MissingArgumentError
-
 
 class CommandDefinitionError(Exception):
     '''user program error.'''
@@ -156,17 +154,16 @@ class CommandDefinition:
             '''return None if key not found.'''
             exists_key = key if key in session.args else None
             if key in self._args_alias:
-                alias = self._args_alias[key]
-                for ali in alias:
-                    if ali in session.args:
+                for alias in self._args_alias[key]:
+                    if alias in session.args:
                         if exists_key is None:
-                            exists_key = ali
+                            exists_key = alias
                         else:
                             raise CommandRunningError('conflict arg flag: %s and %s' % \
-                                (exists_key, ali))
+                                (exists_key, alias))
             return exists_key
 
-        def append_optional_args():
+        def append_optional_args(count=None):
             for arg in optional_args:
                 arg_name, arg_defval = arg
                 exists_key = get_unique_key(arg_name)
@@ -175,7 +172,10 @@ class CommandDefinition:
                 else:
                     arg_val = session.args.get(exists_key)
                     arg_val = arg_convert(arg_name, arg_val, arg_defval)
+                    count -= 1
                 exe_args.append((arg[0], arg_val))
+            if count != 0:
+                raise CommandRunningError('command contain unknown args.')
 
         exe_args = []
         exe_args.append((self._require_args[0], session))
@@ -190,11 +190,10 @@ class CommandDefinition:
                 return
             elif compared < 0:
                 # require args
-                for arg_name, arg_value in list(\
-                        zip(require_args, args_inputed[-len(require_args):])):
+                for arg_name, arg_value in list(zip(require_args, args_inputed[-len(require_args):])):
                     exe_args.append((arg_name, arg_value))
                 # optional args
-                append_optional_args()
+                append_optional_args(count=0-compared)
             else:
                 for arg_name, arg_value in list(zip(require_args, args_inputed)):
                     exe_args.append((arg_name, arg_value))
@@ -282,6 +281,9 @@ class CommandSession:
         '''get command text which route to current command.'''
         return self._args[1]
 
+    def print_command(self):
+        self._manager.print_command(self._manager.get_command(self.command))
+
 class CommandManager:
     def __init__(self):
         self._commands = []
@@ -306,6 +308,15 @@ class CommandManager:
             return cmd
         return wrap
 
+    def get_command(self, cmd_key, show_help=True):
+        wrapper = self._commands_mapper.get(cmd_key)
+        if wrapper is None:
+            if show_help:
+                print('unknown command: ' + cmd_key)
+                self.print_commands()
+            return None
+        return wrapper.command
+
     def execute(self, argv):
         '''execute command by argv.'''
         args = ConsoleArguments(argv)
@@ -313,31 +324,39 @@ class CommandManager:
             print('missing command')
             self.print_commands()
             return False
-        wrapper = self._commands_mapper.get(args[1])
-        if wrapper is None:
-            print('unknown command: ' + args[1])
-            self.print_commands()
-            return False
+        cmd = self.get_command(args[1])
+        if cmd is None: return
         session = CommandSession(self, args)
         try:
-            wrapper.command.execute(session)
+            cmd.execute(session)
         except CommandRunningError as err:
-            print('error on command %s : %s' % (wrapper.command.name, err))
+            session.print_command()
+            print('error on command %s : %s' % (cmd.name, err))
         return True
 
     def print_command(self, cmd, indent=0):
         FIELD_INDENT = 15
         printer = TextPrinter()
+
         def alias_of_arg(name):
             yield name
             if name in cmd._args_alias:
                 for a in cmd._args_alias[name]:
                     yield a
+
+        def arg_format(name, defval=None):
+            formated = '-' + '|'.join(alias_of_arg(name))
+            if not defval is None:
+                if type(defval) != bool:
+                    formated += '=%s' % defval
+                formated = '[%s]' % formated
+            return formated
+
         def print_optional():
             if len(cmd.optional_args) > 0:
                 with printer.indent_inc('', 'options:', FIELD_INDENT):
                     for n, v in cmd.optional_args:
-                        adef = '-%s=%s' % ('|'.join(alias_of_arg(n)), v)
+                        adef = arg_format(n, v)
                         desc = cmd.arg_get_desc(n)
                         if desc != '':
                             printer.print(adef + '   ' + desc)
@@ -359,8 +378,7 @@ class CommandManager:
                                     printer.print(requires)
                         optionals_array = []
                         if len(cmd.optional_args) > 0:
-                            optionals_array = ['[-%s=%s]' % ('|'.join(alias_of_arg(n)), v)
-                                for n, v in cmd.optional_args]
+                            optionals_array = [arg_format(n, v) for n, v in cmd.optional_args]
                             cmd_format_array += optionals_array
                         if cmd._enable_sorted_args:
                             requires_array = [x.upper() for x in cmd.require_args]

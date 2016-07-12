@@ -54,12 +54,10 @@ class ConsoleArguments:
         self._non_parsed_argv = []
         self._keys = set()
         for arg in argv:
-            self._parse(arg)
+            self.__parse_arg(arg)
+        assert len(self._parsed_argv) + len(self._non_parsed_argv) == len(self._argv)
 
-    def __len__(self):
-        return len(self._argv)
-
-    def _parse(self, arg):
+    def __parse_arg(self, arg):
         assert isinstance(arg, str)
         assert len(arg) > 0
         if arg[0] == '"':
@@ -74,6 +72,10 @@ class ConsoleArguments:
             self._keys.add(groups[0])
         else:
             self._non_parsed_argv.append(arg)
+
+    def __len__(self):
+        '''return len of original argv.'''
+        return len(self._argv)
 
     def __getitem__(self, index):
         if isinstance(index, int):
