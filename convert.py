@@ -22,8 +22,6 @@ class Converter:
         attrs = [attr for attr in dir(self) if attr.startswith('to_')]
         for attr in attrs:
             ret_val = getattr(self, attr).__annotations__.get('return')
-            print(attr)
-            print(type(ret_val))
             assert isinstance(ret_val, type)
             self._to[ret_val] = getattr(self, attr)
     
