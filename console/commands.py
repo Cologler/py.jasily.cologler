@@ -383,8 +383,7 @@ class CommandManager:
                         if cmd._enable_sorted_args:
                             requires_array = [x.upper() for x in cmd.require_args]
                             cmd_format_array += requires_array
-                        else:
-                            print_optional()
+                        print_optional()
                     with printer.indent_inc('', 'format:', FIELD_INDENT):
                         printer.print(' '.join(cmd_format_array))
                     if len(cmd.alias) > 0:
