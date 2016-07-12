@@ -7,9 +7,9 @@
 # ----------
 
 import inspect
-from jasily.console import ConsoleArguments
-from jasily.console import MissingArgumentError
-from jasily.text import TextPrinter
+from . import ConsoleArguments
+from . import MissingArgumentError
+from ..text import TextPrinter
 
 class CommandDefinitionError(Exception):
     '''user program error.'''
