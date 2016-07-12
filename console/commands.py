@@ -7,9 +7,13 @@
 # ----------
 
 import inspect
+
+from ..convert import StringConverter
+from ..convert import ConvertError
+from ..text import TextPrinter
 from . import ConsoleArguments
 from . import MissingArgumentError
-from ..text import TextPrinter
+
 
 class CommandDefinitionError(Exception):
     '''user program error.'''
@@ -40,6 +44,7 @@ class CommandDefinition:
         self._args_name = set()
         self._args_alias = {}
         self._args_desc = {}
+        self._converter = StringConverter()
 
         argspec = inspect.getfullargspec(func)
         if argspec[1] is None and argspec[2] is None:
@@ -139,14 +144,10 @@ class CommandDefinition:
                 return arg_val
             if isinstance(arg_val, type(arg_defval)):
                 return arg_val
-            if isinstance(arg_defval, int):
-                if not arg_val.isdigit():
-                    raise CommandRunningError('arg %s should be digit.' % arg_name)
-                return int(arg_val)
-            if isinstance(arg_defval, float):
+            if isinstance(arg_defval, int) or isinstance(arg_defval, float):
                 try:
-                    return float(arg_val)
-                except ValueError:
+                    return self._converter.to(type(arg_defval), arg_val)
+                except ConvertError:
                     raise CommandRunningError('arg %s should be digit.' % arg_name)
             return arg_val
 

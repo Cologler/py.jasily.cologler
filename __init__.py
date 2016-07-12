@@ -69,7 +69,7 @@ def _check_type(name, value, tp,
         n = '/'.join([x.__name__ for x in tp]) if isinstance(tp, tuple) else tp.__name__
         v = value
         raise TypeError("%s type error (expected %s, got %s)" % (
-            name, n, v))
+            name, n, repr(v)))
     else:
         return False
 
