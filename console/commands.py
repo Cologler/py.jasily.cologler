@@ -301,9 +301,15 @@ class CommandManager:
         return self
 
     def command(self, alias=[]):
-        '''create and register command.'''
+        '''
+        create and register command.
+        if have a lot command(), only first alias will work.
+        '''
         def wrap(func):
-            cmd = command(alias)(func)
+            if isinstance(func, CommandDefinition):
+                cmd = func
+            else:
+                cmd = command(alias)(func)
             self.register(cmd)
             return cmd
         return wrap
