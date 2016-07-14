@@ -95,3 +95,27 @@ def check_annotation(func):
     _f.__doc__ = func.__doc__
     return _f
     
+# idea from https://code.activestate.com/recipes/410692/
+class switch(object):
+    def __init__(self, value):
+        self._value = value
+        self._exec = False
+        self._pass_default = False
+
+    def __iter__(self):
+        """Return the match method once, then stop"""
+        yield self.match
+
+    def match(self, *args):
+        """Indicate whether or not to enter a case suite"""
+        if self._pass_default:
+            raise SyntaxError('cannot call cass() after default()')
+        if self._exec: # ready exec
+            return False
+        if args: #case        
+            if self._value in args:
+                self._exec = True                
+        else: #default
+            self._pass_default = True
+            self._exec = True 
+        return self._exec
