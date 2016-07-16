@@ -172,9 +172,10 @@ class CommandDefinition:
                 else:
                     arg_val = session.args.get(exists_key)
                     arg_val = arg_convert(arg_name, arg_val, arg_defval)
-                    count -= 1
+                    if count != None:
+                        count -= 1
                 exe_args.append((arg[0], arg_val))
-            if count != 0:
+            if count != None and count != 0:
                 raise CommandRunningError('command contain unknown args.')
 
         exe_args = []
