@@ -260,12 +260,13 @@ class _CommandWrapper:
         self.is_enable = True
 
 class CommandSession:
-    '''parameter of @command'''
-    def __init__(self, manager, args: ConsoleArguments):
+    '''session info of @command'''
+    def __init__(self, manager, args: ConsoleArguments, **env):
         assert isinstance(manager, CommandManager)
         assert isinstance(args, ConsoleArguments)
         self._manager = manager
         self._args = args
+        self._env = env
 
     @property
     def command_manager(self):
@@ -281,6 +282,11 @@ class CommandSession:
     def command(self) -> str:
         '''get command text which route to current command.'''
         return self._args[1]
+
+    @property
+    def env(self):
+        '''get session env dict.'''
+        return self._env
 
     def print_command(self):
         self._manager.print_command(self._manager.get_command(self.command))
@@ -324,7 +330,7 @@ class CommandManager:
             return None
         return wrapper.command
 
-    def execute(self, argv):
+    def execute(self, argv, **env):
         '''execute command by argv.'''
         args = ConsoleArguments(argv)
         if len(args) < 2:
@@ -333,7 +339,7 @@ class CommandManager:
             return False
         cmd = self.get_command(args[1])
         if cmd is None: return
-        session = CommandSession(self, args)
+        session = CommandSession(self, args, **env)
         try:
             cmd.execute(session)
         except CommandRunningError as err:
