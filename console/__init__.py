@@ -59,12 +59,12 @@ class ConsoleArguments:
 
     def __parse_arg(self, arg):
         assert isinstance(arg, str)
-        assert len(arg) > 0
-        if arg[0] == '"':
-            if arg[-1] == '"':
-                arg = arg[1:-1]
-            else:
-                arg = arg[1:]
+        if len(arg) > 0:
+            if arg[0] == '"':
+                if arg[-1] == '"':
+                    arg = arg[1:-1]
+                else:
+                    arg = arg[1:]
         match = self.mode.match(arg)
         if not match is None:
             groups = match.groups()
