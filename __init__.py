@@ -97,10 +97,20 @@ def check_annotation(func):
     
 # idea from https://code.activestate.com/recipes/410692/
 class switch(object):
+    """
+    how to use `switch` ?
+    ===
+    for case in switch(name):
+        if case('A'):
+            pass
+        elif case(1, 3):
+            pass # for mulit-match.
+        else:
+            pass # for default.
+    """
     def __init__(self, value):
         self._value = value
         self._exec = False
-        self._pass_default = False
 
     def __iter__(self):
         """Return the match method once, then stop"""
@@ -108,14 +118,9 @@ class switch(object):
 
     def match(self, *args):
         """Indicate whether or not to enter a case suite"""
-        if self._pass_default:
-            raise SyntaxError('cannot call cass() after default()')
+        if len(args) == 0:
+            raise  SyntaxError('cannot match empty pattern.')
         if self._exec: # ready exec
-            return False
-        if args: #case        
-            if self._value in args:
-                self._exec = True                
-        else: #default
-            self._pass_default = True
-            self._exec = True 
+            raise SyntaxError('cannot call match() after matched.')
+        self._exec = self._value in args
         return self._exec
