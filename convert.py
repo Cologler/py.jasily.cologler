@@ -7,7 +7,6 @@
 # ----------
 
 from . import check_arguments
-from .descriptors import thread_not_safely
 
 class ConvertError(Exception):
     pass
@@ -34,17 +33,25 @@ class Converter:
         '''
         if type == self._type:
             return self._to_self(value)
-        converter = self._to.get(type)
-        if converter:
-            return converter(value)
+        conv_func = self._to.get(type)
+        if conv_func:
+            try:
+                return conv_func(value)
+            except ValueError:
+                raise ConvertError
         else:
             raise NotImplementedError
 
+    def to_str(self, value) -> str:
+        return str(value)
+
     @classmethod
-    @thread_not_safely
     @check_arguments
     def from_type(cls, source_type: type):
-        '''from source type create a defined converter.'''
+        '''
+        [Thread-NOT-Safely]
+        from source type create a defined converter.
+        '''
         ret = cls._cached.get(source_type)
         if ret != None:
             return ret
@@ -59,13 +66,21 @@ class StringConverter(Converter):
         super().__init__(str)
 
     def to_int(self, value: str) -> int:
-        try:
-            return int(value)
-        except ValueError:
-            raise ConvertError
+        return int(value)
 
-    def to_float(self, value: str)-> float:
-        try:
-            return float(value)
-        except ValueError:
-            raise ConvertError
+    def to_float(self, value: str) -> float:
+        return float(value)
+
+    def to_bool(self, value: str) -> bool:
+        lower = value.lower()
+        if lower == 'true':
+            return True
+        elif lower == 'false':
+            return False
+        raise NotImplementedError
+
+
+
+
+
+

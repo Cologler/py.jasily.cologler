@@ -3,15 +3,17 @@
 #
 # Copyright (c) 2016 - cologler <skyoflw@gmail.com>
 # ----------
-# 
+#
 # ----------
 
 import inspect
 
+from .. import check_arguments
 from ..convert import StringConverter
 from ..convert import ConvertError
 from ..text import TextPrinter
 from . import ConsoleArguments
+
 
 class CommandDefinitionError(Exception):
     '''user program error.'''
@@ -22,6 +24,7 @@ class CommandDefinitionError(Exception):
     def __str__(self):
         return self._msg
 
+
 class CommandRunningError(Exception):
     '''command end without finish. this Exception can safe call in command.'''
     def __init__(self, msg):
@@ -31,18 +34,46 @@ class CommandRunningError(Exception):
     def __str__(self):
         return self._msg
 
-class CommandDefinition:
+
+class CommandParameter:
+    @check_arguments
+    def __init__(self, parameter: inspect.Parameter):
+        self._parameter = parameter
+        self.desc = ''
+
+    @property
+    def name(self):
+        return self._parameter.name
+
+class CommandParameters:
+    def __init__(self, func):
+        self._parameters = []
+        self._parameters_map = {}
+
+        sign = inspect.signature(func)
+        for parameter in sign.parameters.values():
+            self.__add(CommandParameter(parameter))
+
+    def __getitem__(self, key: str) -> CommandParameter:
+        return self._parameters_map[key]
+
+    def __add(self, parameter: CommandParameter):
+        self._parameters.append(parameter)
+        self._parameters_map[parameter.name] = parameter
+
+
+class CommandDefinition():
     def __init__(self, func, alias):
         self._desc = func.__doc__ or '%s command.' % func.__name__
         self._func = func
-        self._alias = alias
+        self._command_alias = alias
         self._enable_sorted_args = False
 
         '''set() for args name. is useful for check if arg is exists.'''
         self._args_name = set()
         self._args_alias = {}
-        self._args_desc = {}
         self._converter = StringConverter()
+        self._parameters = CommandParameters(func)
 
         argspec = inspect.getfullargspec(func)
         if argspec[1] is None and argspec[2] is None:
@@ -73,41 +104,37 @@ class CommandDefinition:
     def names(self):
         '''yield command name and alias.'''
         yield self.name
-        for name in self.alias:
+        for name in self.command_alias:
             yield name
 
     @property
-    def alias(self):
-        '''get command alias.'''
-        return self._alias
-
-    @property
-    def desc(self):
-        '''get command desc.'''
+    def desc(self) -> str:
         return self._desc
 
     @desc.setter
-    def desc(self, value):
+    @check_arguments
+    def desc(self, value: str):
         self._desc = value
+
+    @property
+    def command_alias(self):
+        '''get command alias.'''
+        return self._command_alias
 
     ########################## arg ##########################
 
-    def __check_argname(self, arg):
-        if not arg in self._args_name: raise KeyError
-
-    def arg_add_alias(self, arg, alias):
+    @check_arguments
+    def arg_add_alias(self, arg: str, alias: str):
         assert isinstance(alias, str)
-        self.__check_argname(arg)
+        self._parameters[arg]
         self._args_alias.setdefault(arg, []).append(alias)
 
-    def arg_set_desc(self, arg, desc):
-        assert isinstance(desc, str)
-        self.__check_argname(arg)
-        self._args_desc[arg] = desc
+    @check_arguments
+    def arg_set_desc(self, arg: str, desc: str):
+        self._parameters[arg].desc = desc
 
     def arg_get_desc(self, arg):
-        self.__check_argname(arg)
-        return self._args_desc.get(arg, '')
+        return self._parameters[arg].desc
 
     @property
     def func(self):
@@ -380,9 +407,9 @@ class CommandManager:
             printer.print(cmd.name)
             with printer.indent_inc(' ' * 3):
                 printer.print(cmd.desc)
-                with printer.indent_inc(' ' * 5):                
+                with printer.indent_inc(' ' * 5):
                     cmd_format_array = [cmd.name]
-                    if len(cmd.require_args) + len(cmd.optional_args) > 0:                    
+                    if len(cmd.require_args) + len(cmd.optional_args) > 0:
                         if not cmd._enable_sorted_args:
                             if len(cmd.require_args) > 0:
                                 with printer.indent_inc('', 'requires:', FIELD_INDENT):
@@ -399,9 +426,9 @@ class CommandManager:
                         print_optional()
                     with printer.indent_inc('', 'format:', FIELD_INDENT):
                         printer.print(' '.join(cmd_format_array))
-                    if len(cmd.alias) > 0:
+                    if len(cmd.command_alias) > 0:
                         with printer.indent_inc('', 'alias:', FIELD_INDENT):
-                            printer.print(', '.join(cmd.alias))
+                            printer.print(', '.join(cmd.command_alias))
 
     def print_commands(self):
         print('usage:')
