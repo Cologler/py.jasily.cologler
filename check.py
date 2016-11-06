@@ -14,7 +14,10 @@ from .exceptions import InvalidOperationException
 
 def _check_callable(func):
     if not callable(func):
-        raise TypeError('func is not a callable object.')
+        name = 'func'
+        if hasattr(func, '__name__'):
+            name = getattr(func, '__name__')
+        raise TypeError('%s is not a callable object.' % name)
 
 def _raise(parameter_name, value, expected_type):
     if isinstance(expected_type, tuple):
@@ -65,12 +68,13 @@ def __wrap(wrapper, func):
 def check_arguments(func):
     '''
     check function arguments by annotation.
+    <cannot after @classmethod>
     '''
     _check_callable(func)
     sign = signature(func)
     checkers = [_TypeChecker(x.name, x.annotation) for x in sign.parameters.values()]
     checkers_map = dict(zip([x.name for x in checkers], checkers))
-    def _wrapper(*args, **kwargs):
+    def function(*args, **kwargs):
         for index, checker in enumerate(checkers[:len(args)]):
             checker.check(args[index])
         for name in kwargs:
@@ -78,17 +82,18 @@ def check_arguments(func):
             if checker != None:
                 checker.check(kwargs[name])
         return func(*args, **kwargs)
-    return __wrap(_wrapper, func)
+    return __wrap(function, func)
 
 def check_return(func):
     '''
     check function return value by annotation.
+    <cannot after @classmethod>
     '''
     _check_callable(func)
     expected_type = func.__annotations__.get('return')
     if expected_type is None:
         raise InvalidOperationException('func does not contains return value annotation.')
     checker = _TypeChecker('return value', expected_type)
-    def _wrapper(*args, **kwargs):
+    def function(*args, **kwargs):
         return checker.check(func(*args, **kwargs))
-    return __wrap(_wrapper, func)
+    return function(_wrapper, func)
