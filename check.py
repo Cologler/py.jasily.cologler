@@ -68,7 +68,7 @@ def check_arguments(func):
     '''
     _check_callable(func)
     sign = signature(func)
-    checkers = list(__build_checkers(sign.parameters.values()))
+    checkers = [_TypeChecker(x.name, x.annotation) for x in sign.parameters.values()]
     checkers_map = dict(zip([x.name for x in checkers], checkers))
     def _wrapper(*args, **kwargs):
         for index, checker in enumerate(checkers[:len(args)]):
