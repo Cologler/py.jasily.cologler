@@ -7,7 +7,10 @@
 # ----------
 
 import os
-import inspect
+
+from .exceptions import InvalidOperationException
+from .check import check_arguments
+from .check import check_return
 
 def pip_require(module_name, pip_name=None):
     '''auto call `pip install` if module not install.'''
@@ -59,42 +62,6 @@ def type_check(value, *checkers, name=None):
 # check func parameter for func annotation
 #####
 
-def _check_type(name, value, tp,
-        raise_error=True):
-    if value is None and tp is None:
-        return True
-    if isinstance(value, tp):
-        return True
-    if raise_error:
-        n = '/'.join([x.__name__ for x in tp]) if isinstance(tp, tuple) else tp.__name__
-        v = value
-        raise TypeError("%s type error (expected %s, got %s)" % (
-            name, n, repr(v)))
-    else:
-        return False
-
-def check_annotation(func):
-    '''
-    check method args by annotation.
-    accept:
-        func(arg: str)
-        func(arg: (str, int)) # or
-        func(arg: None)
-    not-accept:
-        func(arg: (None, )) # None in tuple
-    same as parameter and return value.
-    '''
-    def _f(*args):
-        for index, arg in enumerate(inspect.getfullargspec(func)[0]):
-            if arg in func.__annotations__:
-                _check_type(arg, args[index], func.__annotations__[arg])
-        ret = func(*args)
-        if 'return' in func.__annotations__:
-            _check_type('return value', ret, func.__annotations__['return'])
-        return ret
-    _f.__doc__ = func.__doc__
-    return _f
-    
 # idea from https://code.activestate.com/recipes/410692/
 class switch(object):
     """
@@ -124,3 +91,9 @@ class switch(object):
             raise SyntaxError('cannot call match() after matched.')
         self._exec = self._value in args
         return self._exec
+
+
+__all__ = [
+    'switch',
+    'check_arguments', 'check_return',
+]
