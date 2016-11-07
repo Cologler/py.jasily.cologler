@@ -6,9 +6,12 @@
 #
 # ----------
 
+import typing
 from jasily.exceptions import InvalidOperationException
 from jasily.check import check_arguments
 from jasily.check import check_return
+from jasily.check import check_generic
+from _test import assert_error
 
 @check_arguments
 def func1(arg1: str):
@@ -16,14 +19,8 @@ def func1(arg1: str):
 
 # pass
 func1('')
-
 # error
-try:
-    func1(1)
-except TypeError:
-    pass
-else:
-    raise AssertionError
+assert_error(TypeError, func1, 1)
 
 @check_arguments
 def func2(arg1: (str, int)):
@@ -32,14 +29,8 @@ def func2(arg1: (str, int)):
 # pass
 func2('')
 func2(1)
-
 # error
-try:
-    func2(object())
-except TypeError:
-    pass
-else:
-    raise AssertionError
+assert_error(TypeError, func2, object())
 
 # replace type to accept 1 arg callable
 try:
@@ -63,14 +54,8 @@ def func3(arg1: func_check):
 # pass
 func3(None)
 func3(1)
-
-# EOFError
-try:
-    func3('')
-except TypeError:
-    pass
-else:
-    raise AssertionError
+# error
+assert_error(TypeError, func3, '')
 
 @check_return
 def func4(a) -> (str, None):
@@ -78,20 +63,22 @@ def func4(a) -> (str, None):
 
 # pass
 func4('2')
-
 # error
-try:
-    func4(None)
-except TypeError:
-    pass
-else:
-    raise AssertionError
+assert_error(TypeError, func4, None)
+assert_error(TypeError, func4, 1)
 
-try:
-    func4(1)
-except TypeError:
-    pass
-else:
-    raise AssertionError
+check_generic([], typing.List[int])
+check_generic([1], typing.List[int])
+assert_error(TypeError, check_generic, ['2'], typing.List[int])
+
+check_generic({}, typing.Dict[int, str])
+check_generic({1: ''}, typing.Dict[int, str])
+assert_error(TypeError, check_generic, {1: 2}, typing.Dict[int, str])
+assert_error(TypeError, check_generic, {'': '2'}, typing.Dict[int, str])
+
+check_generic((1, ''), typing.Tuple[int, str])
+assert_error(TypeError, check_generic, (1, ), typing.Tuple[int, str])
+
+check_generic((1, ['']), typing.Tuple[int, typing.List[str]])
 
 print('test completed.')

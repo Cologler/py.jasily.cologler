@@ -9,6 +9,7 @@
 import inspect
 from inspect import signature
 from inspect import Parameter
+import typing
 from .exceptions import InvalidOperationException
 
 def _get_func_name(func):
@@ -189,7 +190,48 @@ def check_return(func):
         return checker.check(func(*args, **kwargs))
     return _wrap(_function, func)
 
+def __check_type(actual_value, expected_type: type):
+    if isinstance(expected_type, typing.TypingMeta):
+        return __check_generic_type(actual_value, expected_type)
+    if not isinstance(actual_value, expected_type):
+        raise TypeError("type error (expected %s, got %s)" % (
+            expected_type.__name__, type(actual_value).__name__))
+
+def __check_generic_type(actual_value, expected_type: typing.TypingMeta):
+    if expected_type._has_type_var():
+        raise NotImplementedError('expected_type cannot contains type ver.')
+    if isinstance(expected_type, typing.GenericMeta):
+        parameters = expected_type.__parameters__
+        if isinstance(actual_value, (list, set)):
+            for item in actual_value:
+                __check_type(item, parameters[0])
+        elif isinstance(actual_value, dict):
+            for key in actual_value:
+                __check_type(key, parameters[0])
+                __check_type(actual_value[key], parameters[1])
+        else:
+            raise NotImplementedError
+    elif isinstance(expected_type, typing.TupleMeta):
+        parameters = expected_type.__tuple_params__
+        if len(actual_value) != len(parameters):
+            expected_str = '(' + ', '.join([x.__name__ for x in parameters]) + ')'
+            actual_str = '(' + ', '.join([type(x).__name__ for x in actual_value]) + ')'
+            raise TypeError("type error (expected %s, got %s)" % (expected_str, actual_str))
+        for left, right in zip(actual_value, parameters):
+            __check_type(left, right)
+    else:
+        raise NotImplementedError
+
+@check_arguments
+def check_generic(actual_value, expected_type: typing.TypingMeta):
+    '''
+    check if argument match parameter.
+    raise TypeError if not match.
+    '''
+    __check_generic_type(actual_value, expected_type)
+
 __all__ = [
     'check_arguments',
     'check_return',
+    'check_generic'
 ]
