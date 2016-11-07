@@ -92,8 +92,3 @@ class switch(object):
         self._exec = self._value in args
         return self._exec
 
-
-__all__ = [
-    'switch',
-    'check_arguments', 'check_return',
-]

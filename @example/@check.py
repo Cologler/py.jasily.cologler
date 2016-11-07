@@ -6,9 +6,9 @@
 #
 # ----------
 
-from jasily import InvalidOperationException
-from jasily import check_arguments
-from jasily import check_return
+from jasily.exceptions import InvalidOperationException
+from jasily.check import check_arguments
+from jasily.check import check_return
 
 @check_arguments
 def func1(arg1: str):
@@ -72,7 +72,26 @@ except TypeError:
 else:
     raise AssertionError
 
+@check_return
+def func4(a) -> (str, None):
+    return a or 1
 
+# pass
+func4('2')
 
+# error
+try:
+    func4(None)
+except TypeError:
+    pass
+else:
+    raise AssertionError
+
+try:
+    func4(1)
+except TypeError:
+    pass
+else:
+    raise AssertionError
 
 print('test completed.')

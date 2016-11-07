@@ -64,8 +64,8 @@ class _ComplexExpectedChecker(_ExpectedChecker):
         expected_types = []
         expected_other = []
         for item in self._expected_tuple:
-            if isinstance(item, type):
-                expected_types.append(item)
+            if isinstance(item, type) or item is None:
+                expected_types.append(item or type(None))
             else:
                 expected_other.append(item)
         self._checkers = []
@@ -188,3 +188,8 @@ def check_return(func):
     def _function(*args, **kwargs):
         return checker.check(func(*args, **kwargs))
     return _wrap(_function, func)
+
+__all__ = [
+    'check_arguments',
+    'check_return',
+]
