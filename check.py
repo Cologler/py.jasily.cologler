@@ -143,6 +143,18 @@ def check_arguments(func):
     '''
     check function arguments by annotation.
 
+    e.g.1: allow str
+    @check_arguments
+    def function(arg: str): pass
+
+    e.g.2: allow str or int
+    @check_arguments
+    def function(arg: (str, int)): pass
+
+    e.g.3: is_xxx canbe a callable[object] ptr.
+    @check_arguments
+    def function(arg: (str, is_xxx)): pass
+
     <cannot after @classmethod> please call before @classmethod like:
     @classmethod
     @check_arguments
@@ -173,6 +185,18 @@ def check_arguments(func):
 def check_return(func):
     '''
     check function return value by annotation.
+
+    e.g.1: allow str
+    @check_arguments
+    def function() -> str: pass
+
+    e.g.2: allow str or int
+    @check_arguments
+    def function() -> (str, int): pass
+
+    e.g.3: is_xxx canbe a callable[object] ptr
+    @check_arguments
+    def function() -> (str, is_xxx): pass
 
     <cannot after @classmethod> please call before @classmethod like:
     @classmethod
@@ -227,6 +251,8 @@ def check_generic(actual_value, expected_type: typing.TypingMeta):
     '''
     check if argument match parameter.
     raise TypeError if not match.
+
+    NOTE: check generic for collection will enumerate entire collection.
     '''
     __check_generic_type(actual_value, expected_type)
 
