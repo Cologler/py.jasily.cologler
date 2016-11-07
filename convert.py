@@ -49,15 +49,19 @@ class Converter:
     @check_arguments
     def from_type(cls, source_type: type):
         '''
-        [Thread-NOT-Safely]
+        [Thread-Safely]
         from source type create a defined converter.
         '''
-        ret = cls._cached.get(source_type)
+        source = cls._cached
+        ret = source.get(source_type)
         if ret != None:
             return ret
         if source_type == str:
             ret = StringConverter()
-            cls._cached[source_type] = ret
+            # copy-on-write
+            source = source.copy()
+            source[source_type] = ret
+            cls._cached = source
             return ret
         raise NotImplementedError
 
