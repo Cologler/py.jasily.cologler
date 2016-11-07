@@ -13,9 +13,7 @@ import typing
 from .exceptions import InvalidOperationException
 
 def _get_func_name(func):
-    if hasattr(func, '__name__'):
-        return getattr(func, '__name__')
-    return 'func'
+    return getattr(func, '__name__', 'func')
 
 def _check_callable(func):
     if not callable(func):
@@ -90,6 +88,8 @@ def _expected_checker(annotation, allow_complex) -> _ExpectedChecker:
     elif isinstance(annotation, type):
         return _TypeExpectedChecker(annotation)
     elif isinstance(annotation, tuple):
+        if len(annotation) == 1: # unpack
+            return _expected_checker(annotation[0], allow_complex)
         is_all_type = True
         for item in annotation:
             if not isinstance(item, type):
