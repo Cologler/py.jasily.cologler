@@ -18,6 +18,36 @@ class __NotFound:
 
 NOT_FOUND = __NotFound()
 
+class ValueContainer:
+    def __init__(self, *args):
+        self.__has_value = False
+        self.__value = None
+        if len(args) == 1:
+            self.set_value(args[0])
+        elif len(args) > 0:
+            raise TypeError('only accept zero or one args.')
+
+    @property
+    def has_value(self):
+        '''whether if container has value.'''
+        return self.__has_value
+
+    @property
+    def value(self):
+        '''get current value or None.'''
+        return self.__value
+
+    def set_value(self, value):
+        '''set current value for container.'''
+        self.__has_value = True
+        self.__value = value
+
+    def unset_value(self):
+        '''make container has no value.'''
+        self.__has_value = False
+        self.__value = None
+
+
 class Guid:
     def __init__(self, uid=None, mode=GUID_PY):
         if uid is None:
@@ -55,7 +85,6 @@ class Guid:
         if self._mode == GUID_NET:
             return Guid(self._uuid, GUID_PY).convert_to_net()
         raise NotImplementedError
-
 
 
 __FREEZABLE_FLAG = '__JASILY_FREEZABLE_IS_FREEZED__'
