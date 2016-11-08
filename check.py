@@ -135,7 +135,7 @@ def _wrap(wrapper, func):
     '''make wrapper sign same as func.'''
     wrapper.__doc__ = func.__doc__
     wrapper.__annotations__ = func.__annotations__
-    # black technology
+    wrapper.__name__ = func.__name__
     wrapper.__signature__ = inspect.Signature.from_callable(func)
     return wrapper
 
