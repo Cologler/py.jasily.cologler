@@ -15,7 +15,7 @@ from .exceptions import InvalidOperationException
 def _get_func_name(func):
     return getattr(func, '__name__', 'func')
 
-def _check_callable(func):
+def check_callable(func):
     if not callable(func):
         name = _get_func_name(func)
         raise TypeError('%s is not a callable object.' % name)
@@ -161,7 +161,7 @@ def check_arguments(func):
     def method(cls):
         pass
     '''
-    _check_callable(func)
+    check_callable(func)
     sign = signature(func)
     checkers = [_AnnotationChecker(x.name, x.annotation) for x in sign.parameters.values()]
     def _check():
@@ -204,7 +204,7 @@ def check_return(func):
     def method(cls):
         pass
     '''
-    _check_callable(func)
+    check_callable(func)
     expected_type = func.__annotations__.get('return')
     if expected_type is None:
         name = _get_func_name(func)
