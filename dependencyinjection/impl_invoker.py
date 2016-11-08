@@ -7,7 +7,13 @@
 # ----------
 
 from typing import List
-from inspect import (Parameter, signature)
+import inspect
+from inspect import (
+    Parameter,
+    signature,
+    isfunction,
+    _ParameterKind
+)
 from .errors import TypeNotFoundError
 from ..objects import NOT_FOUND
 from ..check import (check_arguments, check_callable, check_type)
@@ -34,6 +40,9 @@ class SingletonValueFactory(IValueFactory):
         self._type = type(instance)
         self._instance = instance
 
+    def __str__(self):
+        return '%s(%s)' % (self._type.__name__, self._instance, )
+
     @property
     def type(self) -> type:
         return self._type
@@ -46,17 +55,25 @@ class CallableValueFactory(IValueFactory):
         super().__init__()
 
         check_callable(func)
-        self._creator = func
+        self._func = func
+        self._signature = signature(func)
 
-        sign = signature(func)
         self._type = return_value
-        if self._type is None and sign.return_annotation != Parameter.empty:
-            self._type = sign.return_annotation
+        if self._type is None and self._signature.return_annotation != Parameter.empty:
+            self._type = self._signature.return_annotation
         check_type(self._type, type)
 
         self._invoker = invoker
         if self._invoker != None:
             check_type(self._invoker, IFunctionInvoker)
+
+    def __str__(self):
+        if isinstance(self._func, type):
+            return self._func.__qualname__ + '()'
+        elif isfunction(self._func):
+            if self._func.__name__ == '<lambda>':
+                return 'lambda: -> %s' % self._type.__name__
+        return self._func.__qualname__ + '()'
 
     @property
     def type(self) -> type:
@@ -64,9 +81,9 @@ class CallableValueFactory(IValueFactory):
 
     def value(self) -> object:
         if self._invoker != None:
-            return self._invoker.invoke(self._creator)
+            return self._invoker.invoke(self._func)
         else:
-            return self._creator()
+            return self._func()
 
 class IFactoryRouter:
     pass
@@ -77,6 +94,28 @@ class FactoryRouter(IFactoryRouter):
         self._current = None
         self._map = None
         self._last = None
+
+    @property
+    def count(self):
+        return self._count
+
+    def __str__(self):
+        lines = []
+        if self._current != None:
+            lines.append(str(self._current))
+        if self._map != None:
+            total = len(self._map)
+            for index, key in enumerate(self._map):
+                header = '└' if index == total - 1 else '├'
+                for subindex, subline in enumerate(str(self._map[key]).splitlines()):
+                    if subindex == 0:
+                        key_str = str(key)
+                        if isinstance(key, type):
+                            key_str = 'type(%s)' % key.__name__
+                        lines.append('    %s%s: %s' % (header, key_str, subline))
+                    else:
+                        lines.append('     %s' % (subline))
+        return '\r\n'.join(lines)
 
     def provide(self, factory: IValueFactory, keys: tuple, key_index: int=0):
         self._count += 1
@@ -119,6 +158,16 @@ class Resolver:
         self._base_resolver = kwargs.get('base_resolver', None)
         assert isinstance(self._base_resolver, (Resolver, type(None)))
 
+    def __str__(self):
+        lines = []
+        if self._name_resolver.count > 0:
+            lines.append('[Name Resolver]')
+            lines.append(str(self._name_resolver))
+        if self._type_resolver.count > 0:
+            lines.append('[Type Resolver]')
+            lines.append(str(self._type_resolver))
+        return '\r\n'.join(lines)
+
     def import_from(self, resolver):
         self._name_resolver = resolver._name_resolver
         self._type_resolver = resolver._type_resolver
@@ -128,10 +177,12 @@ class Resolver:
                 provide_type: type=None, provide_name: str=None) -> List[IFactoryRouter]:
         if not isinstance(provide_type, (type(None), type)):
             raise TypeError
-        provide_type = provide_type or factory.type
-        self._type_resolver.provide(factory, (provide_type, ))
+        fix_type = provide_type or factory.type
+        self._type_resolver.provide(factory, (fix_type, ))
         if provide_name:
-            self._name_resolver.provide(factory, (provide_name, provide_type))
+            if provide_type is None:
+                self._name_resolver.provide(factory, (provide_name, ))
+            self._name_resolver.provide(factory, (provide_name, fix_type))
 
     def resolve(self, parameter_name: str, expected_type: type=None) -> object:
         '''
@@ -157,13 +208,6 @@ class Resolver:
                 return factory
         return None
 
-    def _enumerate_type(self, expected_type: type):
-        if isinstance(expected_type, type):
-            yield expected_type
-        elif isinstance(expected_type, tuple):
-            for etype in expected_type:
-                yield etype
-
     def _resolve_core(self, parameter_name: str, expected_type: type, level: int) -> IValueFactory:
         if level == Resolver.RESOLVE_LEVEL_WHOLE:
             return self._resolve_core_whole(parameter_name, expected_type)
@@ -172,9 +216,16 @@ class Resolver:
         else:
             raise NotImplementedError
 
+    def _enumerate_type(self, expected_type: type):
+        if isinstance(expected_type, type):
+            yield expected_type
+        elif isinstance(expected_type, tuple):
+            for etype in expected_type:
+                yield etype
+
     def _resolve_core_whole(self, parameter_name: str, expected_type: type) -> IValueFactory:
         if expected_type is None:
-            return self._name_resolver.resolve((parameter_name, ), True)
+            return self._name_resolver.resolve((parameter_name, ), False)
         else:
             for etype in self._enumerate_type(expected_type):
                 factory = self._name_resolver.resolve((parameter_name, etype), False)
@@ -235,6 +286,9 @@ class FunctionInvoker(IFunctionInvoker):
     def __init__(self, **kwargs):
         super().__init__()
         self._resolver = Resolver(**kwargs)
+
+    def __str__(self):
+        return str(self._resolver)
 
     def invoke(self, func: callable):
         '''invoke to execute the func.'''

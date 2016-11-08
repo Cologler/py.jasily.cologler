@@ -52,15 +52,16 @@ class TestFunc1(unittest.TestCase):
         self.assertEqual(invoker3.invoke(func1), '7')
 
 
-def func2(abc):
-    return abc
+def func2(abce):
+    return abce
 
 class TestFunc2(unittest.TestCase):
     def test_2(self):
         invoker = FunctionInvoker()
         invoker.provide_object('5')
-        assert_error(TypeNotFoundError, invoker.invoke, func2) # abc has no type
-        invoker.provide_object(8, provide_name='abc')
+        with self.assertRaises(TypeNotFoundError):
+            invoker.invoke(func2) # abc has no type
+        invoker.provide_object(8, provide_name='abce')
         self.assertEqual(invoker.invoke(func2), 8)
 
 def func3(abc: (int, str)):
@@ -94,6 +95,12 @@ class A:
     def __init__(self, arg: list):
         self.arg = arg
 
+    def test_dict_1(self, x: list) -> dict:
+        return {}
+
+    def test_dict_2(self, d: dict):
+        return d
+
 def func5(ab: A):
     return ab
 
@@ -119,6 +126,14 @@ class TestFunc4And5(unittest.TestCase):
         invoker.provide_callable(A, provide_type=A)
         with self.assertRaises(TypeError):
             self.assertIsInstance(invoker.invoke(func5), A)
+
+    def test_instance_method(self):
+        invoker = FunctionInvoker()
+        a = A([])
+        invoker.provide_callable(lambda : [], provide_type=list)
+        invoker.provide_callable(a.test_dict_1, invoker=invoker)
+        self.assertIsInstance(invoker.invoke(a.test_dict_2), dict)
+        print(invoker)
 
 if __name__ == '__main__':
     unittest.main()
