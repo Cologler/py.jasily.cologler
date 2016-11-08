@@ -6,17 +6,13 @@
 #
 # ----------
 
+from inspect import Parameter, isfunction, signature
 from typing import List
-import inspect
-from inspect import (
-    Parameter,
-    signature,
-    isfunction,
-    _ParameterKind
-)
-from .errors import TypeNotFoundError
+
+from ..check import check_arguments, check_callable, check_type
 from ..objects import NOT_FOUND
-from ..check import (check_arguments, check_callable, check_type)
+from .errors import TypeNotFoundError
+
 
 class IFunctionInvoker:
     '''a interface for FunctionInvoker'''
