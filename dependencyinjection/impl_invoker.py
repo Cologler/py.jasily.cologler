@@ -67,7 +67,7 @@ class CallableValueFactory(IValueFactory):
         else:
             return self._creator()
 
-class RouteResolver:
+class FactoryRouter:
     def __init__(self):
         self._count = 0
         self._current = None
@@ -85,14 +85,15 @@ class RouteResolver:
                 self._map = {}
             resolver = self._map.get(key)
             if resolver is None:
-                resolver = RouteResolver()
+                resolver = FactoryRouter()
                 self._map[key] = resolver
             resolver.provide(factory, keys, key_index + 1)
 
-    def resolve(self, keys: tuple, allow_last: bool=False, key_index: int=0) -> (object, NOT_FOUND):
+    def resolve(self, keys: tuple, allow_last: bool=False, key_index: int=0) -> IValueFactory:
+        '''return factory if found. else return None.'''
         if len(keys) == key_index:
             if self._current != None:
-                return self._current.value()
+                return self._current
         else:
             key = keys[key_index]
             if self._map != None:
@@ -100,8 +101,8 @@ class RouteResolver:
                 if resolver != None:
                     return resolver.resolve(keys, allow_last, key_index+1)
         if allow_last and self._last != None:
-            return self._last.value()
-        return NOT_FOUND
+            return self._last
+        return None
 
 class Resolver:
     RESOLVE_LEVEL_ELSE = 0
@@ -109,8 +110,8 @@ class Resolver:
     RESOLVE_LEVELS = (RESOLVE_LEVEL_WHOLE, RESOLVE_LEVEL_ELSE)
 
     def __init__(self, **kwargs):
-        self._name_resolver = RouteResolver()
-        self._type_resolver = RouteResolver()
+        self._name_resolver = FactoryRouter()
+        self._type_resolver = FactoryRouter()
         self._base_resolver = kwargs.get('base_resolver', None)
         assert isinstance(self._base_resolver, (Resolver, type(None)))
 
@@ -122,15 +123,29 @@ class Resolver:
         if provide_name:
             self._name_resolver.provide(factory, (provide_name, provide_type))
 
-    def resolve(self, parameter_name: str, expected_type: type=None):
-        '''return NOT_FOUND if not resolved.'''
+    def resolve(self, parameter_name: str, expected_type: type=None) -> object:
+        '''
+        resolve value for request parameter.
+        return NOT_FOUND if not resolved.
+        '''
+        factory = self.resolve_factory(parameter_name, expected_type)
+        if factory:
+            return factory.value()
+        else:
+            return NOT_FOUND
+
+    def resolve_factory(self, parameter_name: str, expected_type: type=None) -> IValueFactory:
+        '''
+        resolve factory for request parameter.
+        return None if not resolved.
+        '''
         for level in Resolver.RESOLVE_LEVELS:
-            ret = self._resolve_core(parameter_name, expected_type, level)
-            if ret == NOT_FOUND and self._base_resolver != None:
-                ret = self._base_resolver.resolve(parameter_name, expected_type)
-            if ret != NOT_FOUND:
-                return ret
-        return NOT_FOUND
+            factory = self._resolve_core(parameter_name, expected_type, level)
+            if factory is None and self._base_resolver != None:
+                factory = self._base_resolver.resolve_factory(parameter_name, expected_type)
+            if factory:
+                return factory
+        return None
 
     def _enumerate_type(self, expected_type: type):
         if isinstance(expected_type, type):
@@ -139,7 +154,7 @@ class Resolver:
             for etype in expected_type:
                 yield etype
 
-    def _resolve_core(self, parameter_name: str, expected_type: type, level: int):
+    def _resolve_core(self, parameter_name: str, expected_type: type, level: int) -> IValueFactory:
         if level == Resolver.RESOLVE_LEVEL_WHOLE:
             return self._resolve_core_whole(parameter_name, expected_type)
         elif level == Resolver.RESOLVE_LEVEL_ELSE:
@@ -147,25 +162,23 @@ class Resolver:
         else:
             raise NotImplementedError
 
-    def _resolve_core_whole(self, parameter_name: str, expected_type: type):
+    def _resolve_core_whole(self, parameter_name: str, expected_type: type) -> IValueFactory:
         if expected_type is None:
             return self._name_resolver.resolve((parameter_name, ), True)
         else:
             for etype in self._enumerate_type(expected_type):
-                ret = self._name_resolver.resolve((parameter_name, etype), False)
-                if ret != NOT_FOUND:
-                    return ret
-        return NOT_FOUND
+                factory = self._name_resolver.resolve((parameter_name, etype), False)
+                if factory != None:
+                    return factory
+        return None
 
-    def _resolve_core_else(self, parameter_name: str, expected_type: type):
-        if expected_type is None:
-            return NOT_FOUND
-        else:
+    def _resolve_core_else(self, parameter_name: str, expected_type: type) -> IValueFactory:
+        if expected_type != None:
             for etype in self._enumerate_type(expected_type):
-                ret = self._type_resolver.resolve((etype, ), False)
-                if ret != NOT_FOUND:
-                    return ret
-        return NOT_FOUND
+                factory = self._type_resolver.resolve((etype, ), False)
+                if factory != None:
+                    return factory
+        return None
 
 class ArgumentFiller:
     '''fill the actual argument.'''
