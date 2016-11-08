@@ -3,13 +3,20 @@
 #
 # Copyright (c) 2016 - cologler <skyoflw@gmail.com>
 # ----------
-# 
+#
 # ----------
 
 import uuid
+from .exceptions import InvalidOperationException
 
 GUID_PY = 'py'
 GUID_NET = 'net'
+
+class __NotFound:
+    '''a object for not found value.'''
+    pass
+
+NOT_FOUND = __NotFound()
 
 class Guid:
     def __init__(self, uid=None, mode=GUID_PY):
@@ -49,3 +56,22 @@ class Guid:
             return Guid(self._uuid, GUID_PY).convert_to_net()
         raise NotImplementedError
 
+
+
+__FREEZABLE_FLAG = '__JASILY_FREEZABLE_IS_FREEZED__'
+
+class Freezable:
+    '''provide a freezable check base class.'''
+    def freeze(self):
+        '''freeze object.'''
+        setattr(self, __FREEZABLE_FLAG, True)
+
+    @property
+    def is_freezed(self):
+        '''check if freezed.'''
+        return getattr(self, __FREEZABLE_FLAG, False)
+
+    def _raise_if_freezed(self):
+        '''raise `InvalidOperationException` if is freezed.'''
+        if self.is_freezed:
+            raise InvalidOperationException('obj is freezed.')
