@@ -133,7 +133,6 @@ class TestFunc4And5(unittest.TestCase):
         invoker.provide_callable(lambda : [], provide_type=list)
         invoker.provide_callable(a.test_dict_1, invoker=invoker)
         self.assertIsInstance(invoker.invoke(a.test_dict_2), dict)
-        print(invoker)
 
 if __name__ == '__main__':
     unittest.main()

@@ -142,7 +142,7 @@ class FactoryRouter(IFactoryRouter):
             if self._map != None:
                 resolver = self._map.get(key)
                 if resolver != None:
-                    return resolver.resolve(keys, allow_last, key_index+1)
+                    return resolver.resolve(keys, allow_last, key_index + 1)
         if allow_last and self._last != None:
             return self._last
         return None
@@ -190,7 +190,7 @@ class Resolver:
         return NOT_FOUND if not resolved.
         '''
         factory = self.resolve_factory(parameter_name, expected_type)
-        if factory:
+        if factory != None:
             return factory.value()
         else:
             return NOT_FOUND
@@ -203,7 +203,7 @@ class Resolver:
         for level in Resolver.RESOLVE_LEVELS:
             factory = self._resolve_core(parameter_name, expected_type, level)
             if factory is None and self._base_resolver != None:
-                factory = self._base_resolver.resolve_factory(parameter_name, expected_type)
+                factory = self._base_resolver._resolve_core(parameter_name, expected_type, level)
             if factory:
                 return factory
         return None
