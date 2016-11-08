@@ -7,7 +7,7 @@
 # ----------
 
 from .errors import TypeNotFoundError
-from .impl import FunctionInvoker
+from .impl_invoker import FunctionInvoker
 
 __all__ = [
     'TypeNotFoundError',

@@ -185,6 +185,11 @@ class ArgumentFiller:
         return self._parameter.default == Parameter.empty
 
     @property
+    def is_filled(self) -> bool:
+        '''whether the argument is filled.'''
+        return self._is_filled
+
+    @property
     def value(self) -> object:
         '''get value after filled.'''
         if self._is_filled:
@@ -231,8 +236,20 @@ class FunctionInvoker(IFunctionInvoker):
     @check_arguments
     def provide_callable(self, func: callable, provide_type: type=None, provide_name: str=None,
                          invoker=None):
+        '''provide factory func to create argument.'''
         factory = CallableValueFactory(func, provide_type, invoker)
         self._resolver.provide(factory, provide_type, provide_name)
+
+    @check_arguments
+    def provide_type(self, provide_type: type, provide_name: str=None,
+                     invoker=None):
+        '''provide type to create argument.'''
+        func = provide_type
+        if provide_type is list:
+            func = lambda: []
+        elif provide_type is dict:
+            func = lambda: {}
+        self.provide_callable(func, provide_type, provide_name, invoker)
 
     def create_transient(self):
         '''create a overrideable invoker from this.'''
