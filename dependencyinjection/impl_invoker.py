@@ -6,6 +6,7 @@
 #
 # ----------
 
+from typing import List
 from inspect import (Parameter, signature)
 from .errors import TypeNotFoundError
 from ..objects import NOT_FOUND
@@ -67,14 +68,17 @@ class CallableValueFactory(IValueFactory):
         else:
             return self._creator()
 
-class FactoryRouter:
+class IFactoryRouter:
+    pass
+
+class FactoryRouter(IFactoryRouter):
     def __init__(self):
         self._count = 0
         self._current = None
         self._map = None
         self._last = None
 
-    def provide(self, factory: IValueFactory, keys: tuple, key_index: int=0) -> None:
+    def provide(self, factory: IValueFactory, keys: tuple, key_index: int=0):
         self._count += 1
         self._last = factory
         if len(keys) == key_index:
@@ -115,7 +119,13 @@ class Resolver:
         self._base_resolver = kwargs.get('base_resolver', None)
         assert isinstance(self._base_resolver, (Resolver, type(None)))
 
-    def provide(self, factory: IValueFactory, provide_type: type=None, provide_name: str=None):
+    def import_from(self, resolver):
+        self._name_resolver = resolver._name_resolver
+        self._type_resolver = resolver._type_resolver
+        self._base_resolver = resolver._base_resolver
+
+    def provide(self, factory: IValueFactory,
+                provide_type: type=None, provide_name: str=None) -> List[IFactoryRouter]:
         if not isinstance(provide_type, (type(None), type)):
             raise TypeError
         provide_type = provide_type or factory.type
