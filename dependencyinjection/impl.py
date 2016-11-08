@@ -11,7 +11,13 @@ from .errors import TypeNotFoundError
 from ..objects import NOT_FOUND
 from ..check import (check_arguments, check_callable, check_type)
 
-class ValueFactory:
+class IFunctionInvoker:
+    '''a interface for FunctionInvoker'''
+    def invoke(self, func: callable):
+        raise NotImplementedError
+
+class IValueFactory:
+    '''a interface for ValueFactory'''
     @property
     def type(self) -> type:
         '''get value type from factory.'''
@@ -21,7 +27,7 @@ class ValueFactory:
         '''get or create value from factory.'''
         raise NotImplementedError
 
-class SingletonValueFactory(ValueFactory):
+class SingletonValueFactory(IValueFactory):
     def __init__(self, instance: object):
         super().__init__()
         self._type = type(instance)
@@ -34,8 +40,8 @@ class SingletonValueFactory(ValueFactory):
     def value(self) -> object:
         return self._instance
 
-class CallableValueFactory(ValueFactory):
-    def __init__(self, func: callable, return_value, invoker):
+class CallableValueFactory(IValueFactory):
+    def __init__(self, func: callable, return_value, invoker: IFunctionInvoker):
         super().__init__()
 
         check_callable(func)
@@ -49,7 +55,7 @@ class CallableValueFactory(ValueFactory):
 
         self._invoker = invoker
         if self._invoker != None:
-            check_type(self._invoker, FunctionInvoker)
+            check_type(self._invoker, IFunctionInvoker)
 
     @property
     def type(self) -> type:
@@ -68,7 +74,7 @@ class RouteResolver:
         self._map = None
         self._last = None
 
-    def provide(self, factory: ValueFactory, keys: tuple, key_index: int=0) -> None:
+    def provide(self, factory: IValueFactory, keys: tuple, key_index: int=0) -> None:
         self._count += 1
         self._last = factory
         if len(keys) == key_index:
@@ -108,7 +114,7 @@ class Resolver:
         self._base_resolver = kwargs.get('base_resolver', None)
         assert isinstance(self._base_resolver, (Resolver, type(None)))
 
-    def provide(self, factory: ValueFactory, provide_type: type=None, provide_name: str=None):
+    def provide(self, factory: IValueFactory, provide_type: type=None, provide_name: str=None):
         if not isinstance(provide_type, (type(None), type)):
             raise TypeError
         provide_type = provide_type or factory.type
@@ -197,8 +203,9 @@ class ArgumentFiller:
             self._value = value
             self._is_filled = True
 
-class FunctionInvoker:
+class FunctionInvoker(IFunctionInvoker):
     def __init__(self, **kwargs):
+        super().__init__()
         self._resolver = Resolver(**kwargs)
 
     def invoke(self, func: callable):
