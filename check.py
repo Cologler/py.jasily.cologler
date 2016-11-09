@@ -216,7 +216,7 @@ def check_return(func):
 
 
 def __check_type(actual_value, expected_type: type, include_generic: bool):
-    if isinstance(expected_type, typing.TypingMeta):
+    if include_generic and isinstance(expected_type, typing.TypingMeta):
         return __check_generic_type(actual_value, expected_type)
     if not isinstance(actual_value, expected_type):
         raise TypeError("type error (expected %s, got %s)" % (
