@@ -3,36 +3,12 @@
 #
 # Copyright (c) 2016 - cologler <skyoflw@gmail.com>
 # ----------
-# 
+#
 # ----------
 
 import re
 import sys
-
-class _UnbufferedStream(object):
-    def __init__(self, stream):
-        self.stream = stream
-    def write(self, data):
-        self.stream.write(data)
-        self.stream.flush()
-    def __getattr__(self, attr):
-        return getattr(self.stream, attr)
-
-def stdout_disable_buffer():
-    '''disable buffer for stdout.'''
-    stream = sys.stdout
-    if stream is None:
-        return
-    if not isinstance(stream, _UnbufferedStream):
-        sys.stdout = _UnbufferedStream(stream)
-
-def stdout_enable_buffer():
-    '''enable buffer for stdout.'''
-    stream = sys.stdout
-    if stream is None:
-        return
-    if isinstance(stream, _UnbufferedStream):
-        sys.stdout = stream.stream
+from .utils import (stdout_disable_buffer, stdout_enable_buffer)
 
 class MissingArgumentError(Exception):
     ''' missing argument. '''
@@ -122,3 +98,9 @@ class ConsoleArguments:
 
 if __name__ == '__main__':
     assert ConsoleArguments(['"-av=1d"']).get('av') == '1d'
+
+__all__ = [
+    'stdout_disable_buffer', 'stdout_enable_buffer'
+]
+
+
