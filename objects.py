@@ -38,12 +38,12 @@ class ValueContainer:
         return self.__value
 
     def set_value(self, value):
-        '''set current value for container.'''
+        '''set container value.'''
         self.__has_value = True
         self.__value = value
 
     def unset_value(self):
-        '''make container has no value.'''
+        '''remove container value.'''
         self.__has_value = False
         self.__value = None
 

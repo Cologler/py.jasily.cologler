@@ -109,6 +109,7 @@ class CommandDefinition():
 
     @property
     def desc(self) -> str:
+        '''desc of command.'''
         return self._desc
 
     @desc.setter
@@ -276,10 +277,14 @@ def desc(value):
     return wrap
 
 def command(alias=[]):
-    '''make a func to a CommandDefinition object. you can manual call func by func property.'''
-    def wrap(func):
+    '''
+    make a func to a CommandDefinition object.
+    you can manual call func by func property.
+    func sign must be func(session, ...)
+    '''
+    def _wrap(func):
         return CommandDefinition(func, alias)
-    return wrap
+    return _wrap
 
 class _CommandWrapper:
     def __init__(self, cmd):
@@ -287,7 +292,7 @@ class _CommandWrapper:
         self.is_enable = True
 
 class CommandSession:
-    '''session info of @command'''
+    '''current session info of @command'''
     def __init__(self, manager, args: ConsoleArguments, **env):
         assert isinstance(manager, CommandManager)
         assert isinstance(args, ConsoleArguments)
