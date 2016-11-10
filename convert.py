@@ -81,7 +81,7 @@ class StringConverter(Converter):
             return True
         elif lower == 'false':
             return False
-        raise NotImplementedError
+        raise ConvertError
 
 
 
