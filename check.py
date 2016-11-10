@@ -233,7 +233,7 @@ def check_type(actual_value, expected_type: type):
     '''
     _check_type(actual_value, expected_type, False)
 
-def __is_instance_of_type(actual_value, expected_type: type,
+def _is_instance_of_type(actual_value, expected_type: type,
                           include_generic: bool) -> bool:
     if isinstance(expected_type, tuple):
         return _is_instance_of_type_tuple(actual_value, expected_type, include_generic)
@@ -262,13 +262,13 @@ def _is_instance_of_generic_type(actual_value, expected_type: typing.TypingMeta)
         parameters = expected_type.__parameters__
         if isinstance(actual_value, (list, set)):
             for item in actual_value:
-                if not __is_instance_of_type(item, parameters[0], True):
+                if not _is_instance_of_type(item, parameters[0], True):
                     return False
         elif isinstance(actual_value, dict):
             for key in actual_value:
-                if not __is_instance_of_type(key, parameters[0], True):
+                if not _is_instance_of_type(key, parameters[0], True):
                     return False
-                if not __is_instance_of_type(actual_value[key], parameters[1], True):
+                if not _is_instance_of_type(actual_value[key], parameters[1], True):
                     return False
         else:
             raise NotImplementedError
@@ -279,7 +279,7 @@ def _is_instance_of_generic_type(actual_value, expected_type: typing.TypingMeta)
             actual_str = '(' + ', '.join([type(x).__name__ for x in actual_value]) + ')'
             raise TypeError("type error (expected %s, got %s)" % (expected_str, actual_str))
         for left, right in zip(actual_value, parameters):
-            if not __is_instance_of_type(left, right, True):
+            if not _is_instance_of_type(left, right, True):
                 return False
     else:
         raise NotImplementedError
@@ -292,7 +292,7 @@ def _check_type_tuple(actual_value, expected_type: typing.Tuple[type], include_g
 def _check_type(actual_value, expected_type: type, include_generic: bool):
     if isinstance(expected_type, tuple):
         return _check_type_tuple(actual_value, expected_type, include_generic)
-    if not __is_instance_of_type(actual_value, expected_type, include_generic):
+    if not _is_instance_of_type(actual_value, expected_type, include_generic):
         _raise(actual_value, expected_type)
 
 __all__ = [
