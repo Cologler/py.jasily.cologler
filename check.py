@@ -234,7 +234,7 @@ def check_type(actual_value, expected_type: type):
     _check_type(actual_value, expected_type, False)
 
 def _is_instance_of_type(actual_value, expected_type: type,
-                          include_generic: bool) -> bool:
+                         include_generic: bool) -> bool:
     if isinstance(expected_type, tuple):
         return _is_instance_of_type_tuple(actual_value, expected_type, include_generic)
     if include_generic and _is_generic_type(expected_type):
@@ -299,6 +299,7 @@ __all__ = [
     # function
     'check_callable',
     'check_generic',
+    'check_type',
 
     # decorator
     'check_arguments',

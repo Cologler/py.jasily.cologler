@@ -36,3 +36,4 @@ class switch(object):
             raise SyntaxError('cannot call match() after matched.')
         self._exec = self._value in args
         return self._exec
+        
