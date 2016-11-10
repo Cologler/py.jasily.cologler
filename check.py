@@ -30,7 +30,7 @@ def check_callable(func):
     if callable(func):
         return
     name = _get_func_name(func)
-    _raise(func, 'callable')
+    _raise(name, 'callable')
 
 class _ExpectedChecker:
     def check(self, value) -> bool:
