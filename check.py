@@ -12,14 +12,25 @@ from inspect import Parameter
 import typing
 from .exceptions import InvalidOperationException
 
+def _raise(actual_value: object, expected: (type, str)):
+    expected_str = expected if isinstance(expected, str) else expected.__name__
+    raise TypeError("type error (expected %s, got %s)" % (
+        expected_str, type(actual_value).__name__))
+
+def _types_to_str(types: typing.Tuple[type]):
+    return '/'.join([x.__name__ for x in types])
+
+def _is_generic_type(value: type):
+    return isinstance(value, typing.TypingMeta)
+
 def _get_func_name(func):
     return getattr(func, '__name__', 'func')
 
 def check_callable(func):
-    if not callable(func):
-        name = _get_func_name(func)
-        raise TypeError('%s is not a callable object.' % name)
-
+    if callable(func):
+        return
+    name = _get_func_name(func)
+    _raise(func, 'callable')
 
 class _ExpectedChecker:
     def check(self, value) -> bool:
@@ -42,10 +53,10 @@ class _TypeTupleExpectedChecker(_ExpectedChecker):
     def check(self, value) -> bool:
         return isinstance(value, self._expected_types)
     def __str__(self) -> str:
-        return '/'.join([x.__name__ for x in self._expected_types])
+        return _types_to_str(self._expected_types)
 
 class _CallableExpectedChecker(_ExpectedChecker):
-    def __init__(self, expected_callable: tuple):
+    def __init__(self, expected_callable: callable):
         self._expected_callable = expected_callable
         self._name = _get_func_name(expected_callable)
         self._sign = signature(expected_callable)
@@ -80,7 +91,7 @@ class _ComplexExpectedChecker(_ExpectedChecker):
     def __str__(self):
         return '/'.join([str(x) for x in self._checkers])
 
-def _expected_checker(annotation, allow_complex) -> _ExpectedChecker:
+def _expected_checker(annotation, allow_complex=True) -> _ExpectedChecker:
     if annotation == Parameter.empty:
         return None
     elif annotation is None:
@@ -214,26 +225,61 @@ def check_return(func):
         return checker.check(func(*args, **kwargs))
     return _wrap(_function, func)
 
+@check_arguments
+def check_generic(actual_value, expected_type: typing.TypingMeta):
+    '''
+    check if value match type.
+    raise TypeError if not match.
 
-def __check_type(actual_value, expected_type: type, include_generic: bool):
-    if include_generic and isinstance(expected_type, typing.TypingMeta):
-        return __check_generic_type(actual_value, expected_type)
-    if not isinstance(actual_value, expected_type):
-        raise TypeError("type error (expected %s, got %s)" % (
-            expected_type.__name__, type(actual_value).__name__))
+    NOTE: check generic for collection will enumerate entire collection.
+    '''
+    _check_type(actual_value, expected_type, True)
 
-def __check_generic_type(actual_value, expected_type: typing.TypingMeta):
+@check_arguments
+def check_type(actual_value, expected_type: type):
+    '''
+    check if value match type.
+    raise TypeError if not match.
+    '''
+    _check_type(actual_value, expected_type, False)
+
+def __is_instance_of_type(actual_value, expected_type: type,
+                          include_generic: bool) -> bool:
+    if isinstance(expected_type, tuple):
+        return _is_instance_of_type_tuple(actual_value, expected_type, include_generic)
+    if include_generic and _is_generic_type(expected_type):
+        return _is_instance_of_generic_type(actual_value, expected_type)
+    checker = _expected_checker(expected_type, True)
+    return checker.check(actual_value)
+
+def _is_instance_of_type_tuple(actual_value, expected_type: typing.Tuple[type],
+                               include_generic: bool) -> bool:
+    if include_generic:
+        generics = []
+        for that in expected_type:
+            if _is_generic_type(that):
+                generics.append(that)
+        for that in generics:
+            if _is_instance_of_generic_type(actual_value, that):
+                return True
+    checker = _expected_checker(expected_type, True)
+    return checker.check(actual_value)
+
+def _is_instance_of_generic_type(actual_value, expected_type: typing.TypingMeta):
     if expected_type._has_type_var():
         raise NotImplementedError('expected_type cannot contains type ver.')
     if isinstance(expected_type, typing.GenericMeta):
         parameters = expected_type.__parameters__
         if isinstance(actual_value, (list, set)):
             for item in actual_value:
-                __check_type(item, parameters[0], True)
+                if not __is_instance_of_type(item, parameters[0], True):
+                    return False
         elif isinstance(actual_value, dict):
             for key in actual_value:
-                __check_type(key, parameters[0], True)
-                __check_type(actual_value[key], parameters[1], True)
+                if not __is_instance_of_type(key, parameters[0], True):
+                    return False
+                if not __is_instance_of_type(actual_value[key], parameters[1], True):
+                    return False
         else:
             raise NotImplementedError
     elif isinstance(expected_type, typing.TupleMeta):
@@ -243,30 +289,28 @@ def __check_generic_type(actual_value, expected_type: typing.TypingMeta):
             actual_str = '(' + ', '.join([type(x).__name__ for x in actual_value]) + ')'
             raise TypeError("type error (expected %s, got %s)" % (expected_str, actual_str))
         for left, right in zip(actual_value, parameters):
-            __check_type(left, right, True)
+            if not __is_instance_of_type(left, right, True):
+                return False
     else:
         raise NotImplementedError
+    return True
 
-@check_arguments
-def check_generic(actual_value, expected_type: typing.TypingMeta):
-    '''
-    check if value match type.
-    raise TypeError if not match.
+def _check_type_tuple(actual_value, expected_type: typing.Tuple[type], include_generic: bool):
+    if not _is_instance_of_type_tuple(actual_value, expected_type, include_generic):
+        _raise(actual_value, expected_type)
 
-    NOTE: check generic for collection will enumerate entire collection.
-    '''
-    __check_generic_type(actual_value, expected_type)
-
-@check_arguments
-def check_type(actual_value, expected_type: type):
-    '''
-    check if value match type.
-    raise TypeError if not match.
-    '''
-    __check_type(actual_value, expected_type, False)
+def _check_type(actual_value, expected_type: type, include_generic: bool):
+    if isinstance(expected_type, tuple):
+        return _check_type_tuple(actual_value, expected_type, include_generic)
+    if not __is_instance_of_type(actual_value, expected_type, include_generic):
+        _raise(actual_value, expected_type)
 
 __all__ = [
+    # function
+    'check_callable',
+    'check_generic',
+
+    # decorator
     'check_arguments',
-    'check_return',
-    'check_generic'
+    'check_return'
 ]
