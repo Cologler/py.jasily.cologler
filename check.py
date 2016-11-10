@@ -142,12 +142,12 @@ class _AnnotationChecker:
         raise TypeError("parameter [%s] type error (expected %s, got %s)" % (
             self._name, self._checker, type(value).__name__))
 
-def _wrap(wrapper, func):
+def _wrap(wrapper, func, sign=None):
     '''make wrapper sign same as func.'''
     wrapper.__doc__ = func.__doc__
     wrapper.__annotations__ = func.__annotations__
     wrapper.__name__ = func.__name__
-    wrapper.__signature__ = inspect.Signature.from_callable(func)
+    wrapper.__signature__ = sign or inspect.Signature.from_callable(func)
     return wrapper
 
 def check_arguments(func):
@@ -175,13 +175,6 @@ def check_arguments(func):
     check_callable(func)
     sign = signature(func)
     checkers = [_AnnotationChecker(x.name, x.annotation) for x in sign.parameters.values()]
-    def _check():
-        for checker in checkers:
-            if checker.can_check():
-                return
-        name = _get_func_name(func)
-        raise InvalidOperationException('%s does not contains any parameter annotation.' % name)
-    _check()
     checkers_map = dict(zip([x.name for x in checkers], checkers))
     def _function(*args, **kwargs):
         for index, checker in enumerate(checkers[:len(args)]):
@@ -191,7 +184,7 @@ def check_arguments(func):
             if checker != None:
                 checker.check(kwargs[name])
         return func(*args, **kwargs)
-    return _wrap(_function, func)
+    return _wrap(_function, func, sign)
 
 def check_return(func):
     '''
@@ -216,10 +209,7 @@ def check_return(func):
         pass
     '''
     check_callable(func)
-    expected_type = func.__annotations__.get('return')
-    if expected_type is None:
-        name = _get_func_name(func)
-        raise InvalidOperationException('%s does not contains return value annotation.' % name)
+    expected_type = func.__annotations__.get('return', Parameter.empty)
     checker = _AnnotationChecker('return value', expected_type)
     def _function(*args, **kwargs):
         return checker.check(func(*args, **kwargs))
