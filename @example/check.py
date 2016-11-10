@@ -12,45 +12,36 @@ from jasily.exceptions import InvalidOperationException
 from jasily import check_arguments
 from jasily import check_return
 from jasily import check_generic
-from _test import assert_error
 
-@check_arguments
-def func1(arg1: str):
-    pass
-
-# pass
-func1('')
-# error
-assert_error(TypeError, func1, 1)
-
-@check_arguments
-def func2(arg1: (str, int)):
-    pass
-
-# pass
-func2('')
-func2(1)
-# error
-assert_error(TypeError, func2, object())
-
-# replace type to accept 1 arg callable
-try:
-    def func_1000(arg1, arg2):
-        pass
-    @check_arguments
-    def func_1001(arg: func_1000):
-        pass
-except InvalidOperationException: # too many arg
-    pass
-else:
-    raise AssertionError
-
-def func_check(arg):
-    return not isinstance(arg, str)
+# pylint: disable=W0612
+# pylint: disable=W0613
 
 class TestCheckMethods(unittest.TestCase):
+    def test_base(self):
+        @check_arguments
+        def func1(arg1: str): pass
+        func1('')
+        with self.assertRaises(TypeError):
+            func1(1)
+
+        @check_arguments
+        def func2(arg1: (str, int)): pass
+        func2('')
+        func2(1)
+        with self.assertRaises(TypeError):
+            func2(object())
+
+    def test_callable(self):
+        with self.assertRaises(InvalidOperationException):
+            def func_1000(arg1, arg2):
+                pass
+            @check_arguments
+            def func_1001(arg: func_1000):
+                pass
 
     def test_check_arguments_3(self):
+        def func_check(arg):
+            return not isinstance(arg, str)
         @check_arguments
         def func(arg1: func_check):
             pass
