@@ -9,8 +9,13 @@
 import os
 
 from .exceptions import InvalidOperationException
-from .check import check_arguments
-from .check import check_return
+from .check import (
+    check_arguments,
+    check_return,
+    check_callable,
+    check_generic,
+    check_type
+)
 
 def pip_require(module_name, pip_name=None):
     '''auto call `pip install` if module not install.'''

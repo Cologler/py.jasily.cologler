@@ -9,9 +9,9 @@
 import unittest
 import typing
 from jasily.exceptions import InvalidOperationException
-from jasily.check import check_arguments
-from jasily.check import check_return
-from jasily.check import check_generic
+from jasily import check_arguments
+from jasily import check_return
+from jasily import check_generic
 from _test import assert_error
 
 @check_arguments
