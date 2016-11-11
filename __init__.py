@@ -14,7 +14,6 @@ from .check import (
     check_arguments,
     check_return,
     check_callable,
-    check_generic,
     check_type
 )
 

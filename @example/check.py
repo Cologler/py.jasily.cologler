@@ -12,7 +12,6 @@ from jasily.exceptions import InvalidOperationException
 from jasily import (
     check_arguments,
     check_return,
-    check_generic,
     check_callable,
     check_type
 )
@@ -80,22 +79,6 @@ class TestCheckMethods(unittest.TestCase):
             check_type('', int)
         with self.assertRaises(TypeError):
             check_type('', float, int)
-
-    def test_check_generic(self):
-        check_generic([], typing.List[int])
-        check_generic([1], typing.List[int])
-        check_generic({}, typing.Dict[int, str])
-        check_generic({1: ''}, typing.Dict[int, str])
-        check_generic((1, ''), typing.Tuple[int, str])
-        check_generic((1, ['']), typing.Tuple[int, typing.List[str]])
-        with self.assertRaises(TypeError):
-            check_generic(['2'], typing.List[int])
-        with self.assertRaises(TypeError):
-            check_generic({1: 2}, typing.Dict[int, str])
-        with self.assertRaises(TypeError):
-            check_generic({'': '2'}, typing.Dict[int, str])
-        with self.assertRaises(TypeError):
-            check_generic((1, ), typing.Tuple[int, str])
 
 if __name__ == '__main__':
     unittest.main()
