@@ -17,9 +17,6 @@ def _raise(actual_value: object, expected: (type, str)):
     raise TypeError("type error (expected %s, got %s)" % (
         expected_str, type(actual_value).__name__))
 
-def _types_to_str(types: typing.Tuple[type]):
-    return '/'.join([x.__name__ for x in types])
-
 def _is_generic_type(value: type):
     return isinstance(value, typing.TypingMeta)
 
@@ -53,7 +50,7 @@ class _TypeTupleExpectedChecker(_ExpectedChecker):
     def check(self, value) -> bool:
         return isinstance(value, self._expected_types)
     def __str__(self) -> str:
-        return _types_to_str(self._expected_types)
+        return '/'.join([x.__name__ for x in self._expected_types])
 
 class _CallableExpectedChecker(_ExpectedChecker):
     def __init__(self, expected_callable: callable):
@@ -175,8 +172,7 @@ def check_arguments(func):
     <cannot after @classmethod> please call before @classmethod like:
     @classmethod
     @check_arguments
-    def method(cls):
-        pass
+    def method(cls): pass
     '''
     check_callable(func)
     sign = signature(func)
@@ -211,8 +207,7 @@ def check_return(func):
     <cannot after @classmethod> please call before @classmethod like:
     @classmethod
     @check_return
-    def method(cls):
-        pass
+    def method(cls): pass
     '''
     check_callable(func)
     expected_type = func.__annotations__.get('return', Parameter.empty)
