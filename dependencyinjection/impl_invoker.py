@@ -149,6 +149,7 @@ class Resolver:
     RESOLVE_LEVELS = (RESOLVE_LEVEL_WHOLE, RESOLVE_LEVEL_ELSE)
 
     def __init__(self, **kwargs):
+        self._provided = []
         self._name_resolver = FactoryRouter()
         self._type_resolver = FactoryRouter()
         self._base_resolver = kwargs.get('base_resolver', None)
@@ -165,14 +166,14 @@ class Resolver:
         return '\r\n'.join(lines)
 
     def import_from(self, resolver):
-        self._name_resolver = resolver._name_resolver
-        self._type_resolver = resolver._type_resolver
-        self._base_resolver = resolver._base_resolver
+        for provided in resolver._provided:
+            self.provide(*provided)
 
     def provide(self, factory: IValueFactory,
                 provide_type: type=None, provide_name: str=None) -> List[IFactoryRouter]:
         if not isinstance(provide_type, (type(None), type)):
             raise TypeError
+        self._provided.append((factory, provide_type, provide_name))
         fix_type = provide_type or factory.type
         self._type_resolver.provide(factory, (fix_type, ))
         if provide_name:
