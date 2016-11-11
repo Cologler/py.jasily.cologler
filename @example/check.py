@@ -9,9 +9,13 @@
 import unittest
 import typing
 from jasily.exceptions import InvalidOperationException
-from jasily import check_arguments
-from jasily import check_return
-from jasily import check_generic
+from jasily import (
+    check_arguments,
+    check_return,
+    check_generic,
+    check_callable,
+    check_type
+)
 
 # pylint: disable=W0612
 # pylint: disable=W0613
@@ -65,6 +69,17 @@ class TestCheckMethods(unittest.TestCase):
             func(None)
         with self.assertRaises(TypeError):
             func(1)
+
+    def test_check_type(self):
+        check_type('', str)
+        check_type('', str, int)
+        check_type('', float, str, int)
+        check_type('', float, str, int, None)
+        check_type(None, float, str, int, None)
+        with self.assertRaises(TypeError):
+            check_type('', int)
+        with self.assertRaises(TypeError):
+            check_type('', float, int)
 
     def test_check_generic(self):
         check_generic([], typing.List[int])
