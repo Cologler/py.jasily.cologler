@@ -16,10 +16,13 @@ from .impl_invoker import (
     Resolver
 )
 
-LOCK_SINGLETON = threading.Lock()
-
 class LifeTime(Enum):
+    '''
+    singleton always is thread-safe.
+    scoped, transient always is NOT thread-safe.
+    '''
     singleton = 0
+    '''scoped always '''
     scoped = 1
     transient = 2
 
@@ -47,12 +50,21 @@ class FactoryValueStore(IValueStore):
         self._factory = factory
         self._is_singleton = isinstance(factory, SingletonValueFactory)
         self._value = NOT_FOUND
+        if self._is_singleton:
+            self._value = factory.value()
+        else:
+            self._lock = threading.Lock()
 
     def get(self, key):
+        if self._value is NOT_FOUND:
+            with self._lock:
+                if self._value is NOT_FOUND:
+                    self._value = self._factory.value()
+            assert self._value != NOT_FOUND
         return self._value
 
     def set(self, key, value):
-        self._value = value
+        pass
 
 class LifeTimeResolver(Resolver):
     '''resolver with life time.'''
@@ -62,7 +74,8 @@ class LifeTimeResolver(Resolver):
         self._cached_scopeds = DictValueStore()
 
     def provide(self, factory: IValueFactory,
-                provide_type: type=None, provide_name: str=None, **kwargs):
+                provide_type: type=None, provide_name: str=None,
+                **kwargs):
         lifetime = kwargs.get('lifetime')
         check_type(lifetime, LifeTime)
         super().provide(factory, provide_type, provide_name)

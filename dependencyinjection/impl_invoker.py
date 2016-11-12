@@ -300,7 +300,8 @@ class FunctionInvoker(IFunctionInvoker):
             return func()
 
     @check_arguments
-    def provide_object(self, obj: object, provide_type: type=None, provide_name: str=None):
+    def provide_object(self, obj: object,
+                       provide_type: type=None, provide_name: str=None):
         '''provide singleton argument.'''
         if provide_type != None and not isinstance(obj, provide_type):
             raise TypeError
@@ -308,7 +309,8 @@ class FunctionInvoker(IFunctionInvoker):
         self._resolver.provide(factory, provide_type, provide_name)
 
     @check_arguments
-    def provide_callable(self, func: callable, provide_type: type=None, provide_name: str=None,
+    def provide_callable(self, func: callable,
+                         provide_type: type=None, provide_name: str=None,
                          invoker=None):
         '''provide factory func to create argument.'''
         factory = CallableValueFactory(func, provide_type, invoker)
