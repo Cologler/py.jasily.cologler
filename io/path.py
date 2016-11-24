@@ -93,24 +93,38 @@ class Directory(FileSystem):
     def __init__(self, path):
         super().__init__(path)
 
-    def enumerate_items(self, include_file=True, include_dir=True):
+    def enumerate_items(self, include_file=True, include_dir=True, deep=1):
         ''' get items from directory. '''
+        deep -= 1
+        if deep > 0:
+            dirs = []
         for name in os.listdir(self.path.path):
             path = os.path.join(self.path.path, name)
             if os.path.isfile(path):
                 if include_file:
                     yield File(path)
             elif os.path.isdir(path):
-                if include_dir:
-                    yield Directory(path)
+                if include_dir or deep > 0:
+                    d = Directory(path)
+                    if include_dir:
+                        yield d
+                    if deep > 0:
+                        dirs.append(d)
+        if deep > 0:
+            for d in dirs:
+                for i in d.enumerate_items(include_file=include_file,
+                                           include_dir=include_dir,
+                                           deep=deep):
+                    yield i
 
-    def enumerate_files(self):
+
+    def enumerate_files(self, deep=1):
         ''' get files from directory. '''
-        return self.enumerate_items(include_dir=False)
+        return self.enumerate_items(include_dir=False, deep=deep)
 
-    def enumerate_dirs(self):
+    def enumerate_dirs(self, deep=1):
         ''' get directorys from directory. '''
-        return self.enumerate_items(include_file=False)
+        return self.enumerate_items(include_file=False, deep=deep)
 
     def hardlink(self, dest):
         if isinstance(dest, Path):
