@@ -336,6 +336,8 @@ class CommandManager:
         for name in cmd.names():
             name_fixed = name.replace('_', '-')
             self._max_command_length = max(self._max_command_length, len(name_fixed))
+            if name_fixed in self._commands_mapper:
+                raise CommandDefinitionError('command name conflict !')
             self._commands_mapper[name_fixed] = wrapper
         return self
 
