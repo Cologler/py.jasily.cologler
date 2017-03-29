@@ -9,7 +9,7 @@
 import os
 from setuptools import setup, find_packages
 
-VERSION = '0.1.0.0'
+VERSION = '0.1.0.1'
 DESCRIPTION = ''
 
 long_description = None
@@ -29,7 +29,7 @@ setup(
     keywords = 'python',
     author = 'cologler',
     author_email='skyoflw@gmail.com',
-    url = 'https://github.com/cologler/py.jasily.cologler',
+    url = 'https://github.com/Jasily/jasily-python',
     license = 'MIT',
     packages = find_packages(),
     include_package_data = True,
