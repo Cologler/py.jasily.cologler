@@ -104,3 +104,12 @@ class Freezable:
         '''raise `InvalidOperationException` if is freezed.'''
         if self.is_freezed:
             raise InvalidOperationException('obj is freezed.')
+
+
+class Set(set):
+    def add(self, v):
+        if v in self:
+            return False
+        set.add(self, v)
+        return True
+
