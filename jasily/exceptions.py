@@ -6,6 +6,8 @@
 # build-in Exceptions
 # ----------
 
+from .utils import jrepr
+
 
 class JasilyBaseException(Exception):
     def __init__(self, internal_error: str=None,
@@ -23,6 +25,17 @@ class JasilyBaseException(Exception):
     @property
     def kwargs(self):
         return self._kwargs
+
+
+class ApiNotSupportException(JasilyBaseException):
+    ''''''
+    def __init__(self, message: str,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._message = message
+
+    def _build_str_core(self):
+        return self._message
 
 
 class ArgumentException(JasilyBaseException):
@@ -57,6 +70,20 @@ class ArgumentTypeException(ArgumentException):
         return fmtext.format(name=self._parameter_name or '?',
                              except_type=self._except_type.__name__,
                              actual_type=actual_type)
+
+
+class ArgumentValueException(JasilyBaseException):
+    def __init__(self, actual_value, except_message: str,
+                 *args, **kwargs):
+        '''you can use {value} to format value.'''
+        super().__init__(*args, **kwargs)
+        self._actual_value = actual_value
+        self._except_message = except_message
+
+    def _build_str_core(self):
+        value = jrepr(self._actual_value)
+        fmtext = self._except_message.format(value=value)
+        return fmtext
 
 
 class InvalidOperationException(Exception):
