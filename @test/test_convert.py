@@ -10,7 +10,9 @@ import os
 import sys
 import traceback
 import unittest
+
 from jasily.exceptions import ArgumentTypeException
+from jasily.objects import UInt
 from jasily.convert import *
 
 
@@ -38,6 +40,18 @@ class TestStringTypeConverter(unittest.TestCase):
         self.assertEqual(False, self.Converter.convert(bool, '0'))
         with self.assertRaises(TypeConvertException):
             self.assertEqual(False, self.Converter.convert(bool, '2'))
+
+    def test_convert_int(self):
+        self.assertEqual(1, self.Converter.convert(int, '1'))
+        self.assertEqual(-1, self.Converter.convert(int, '-1'))
+        with self.assertRaises(TypeConvertException):
+            self.assertEqual(int(1.1), self.Converter.convert(int, '1.1'))
+
+    def test_convert_uint(self):
+        self.assertEqual(1, self.Converter.convert(UInt, '1'))
+        with self.assertRaises(TypeConvertException):
+            self.assertEqual(-1, self.Converter.convert(UInt, '-1'))
+
 
 def main(argv=None):
     if argv is None:

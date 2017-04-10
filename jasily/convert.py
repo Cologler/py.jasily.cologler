@@ -8,6 +8,7 @@
 
 from . import check_arguments
 from .exceptions import JasilyBaseException, ArgumentTypeException
+from .objects import UInt
 
 class ConvertError(Exception):
     pass
@@ -156,7 +157,12 @@ class StringTypeConverter(TypeConverter):
     def __init__(self):
         super().__init__(str)
 
+    def to_uint(self, value: str) -> UInt:
+        return UInt(self.to_int(value))
+
     def to_int(self, value: str) -> int:
+        if '.' in value:
+            raise TypeConvertException(value, int)
         return int(value)
 
     def to_float(self, value: str) -> float:
@@ -168,4 +174,4 @@ class StringTypeConverter(TypeConverter):
             return True
         elif lower == 'false' or lower == '0':
             return False
-        raise TypeConvertException(value, self._type)
+        raise TypeConvertException(value, bool)

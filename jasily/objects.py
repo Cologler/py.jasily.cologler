@@ -71,6 +71,12 @@ class UInt:
             raise ValueError
         self._value = v
 
+    def __int__(self):
+        return self._value
+
+    def __eq__(self, value):
+        return self._value == value
+
     @property
     def value(self):
         return self._value
