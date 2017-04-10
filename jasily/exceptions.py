@@ -8,11 +8,21 @@
 
 
 class JasilyBaseException(Exception):
+    def __init__(self, internal_error: str=None,
+                 *args, **kwargs):
+        super().__init__(*args)
+        self._internal_error = internal_error
+        self._kwargs = kwargs
+
     def __str__(self):
         return '<%s> %s' % (type(self).__name__, self._build_str_core())
 
     def _build_str_core(self):
         raise NotImplementedError
+
+    @property
+    def kwargs(self):
+        return self._kwargs
 
 
 class ArgumentException(JasilyBaseException):

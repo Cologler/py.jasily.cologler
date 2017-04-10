@@ -7,7 +7,7 @@
 # ----------
 
 from . import check_arguments
-from .exceptions import ArgumentTypeException
+from .exceptions import JasilyBaseException, ArgumentTypeException
 
 class ConvertError(Exception):
     pass
@@ -85,20 +85,39 @@ class StringConverter(Converter):
         raise ConvertError
 
 
-class TypeConvertException(Exception):
+class TypeNotSupportException(JasilyBaseException):
+    def __init__(self, from_type, except_type,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._from_type = from_type
+        self._except_type = except_type
+
+    def _build_str_core(self):
+        f = self._from_type.__name__
+        t = self._except_type.__name__
+        return 'currently is not support convert from %s to %s' % (f, t)
+
+
+class TypeConvertException(JasilyBaseException):
     def __init__(self, value, except_type,
-                 error=None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._value = value
-        self._error = error
         self._except_type = except_type
+
+    def _build_str_core(self):
+        from .utils import jrepr
+        valtype = jrepr(self._value)
+        return 'cannot convert from <%s> to <%s>' % (valtype, self._except_type.__name__)
 
 
 class TypeConverter:
     G_TYPE = type
 
     def __init__(self, from_type):
+        if not isinstance(from_type, self.G_TYPE):
+            raise ArgumentTypeException(self.G_TYPE, from_type)
+
         self._type = from_type
         self._convmap = {}
         for attr in [attr for attr in dir(self) if attr.startswith('to_')]:
@@ -113,16 +132,24 @@ class TypeConverter:
         return value
 
     def convert(self, type, value):
-        '''raise `TypeConvertException` is convert failed.'''
-        if type is None:
-            raise ArgumentTypeException(self.G_TYPE, None)
+        '''
+        raise `TypeNotSupportException` is cannot convert;\n
+        raise `TypeConvertException` is convert failed;
+        '''
+        if not isinstance(type, self.G_TYPE):
+            raise ArgumentTypeException(self.G_TYPE, type)
+        if not isinstance(value, self._type):
+            raise ArgumentTypeException(self._type, value)
+
         func = self._convmap.get(type)
         if func is None:
-            raise NotImplementedError
+            raise TypeNotSupportException(self._type, type)
         try:
             return func(value)
+        except TypeConvertException:
+            raise
         except Exception as err:
-            raise TypeConvertException(value, type, err)
+            raise TypeConvertException(value, type, internal_error=err)
 
 
 class StringTypeConverter(TypeConverter):
@@ -137,8 +164,8 @@ class StringTypeConverter(TypeConverter):
 
     def to_bool(self, value: str) -> bool:
         lower = value.lower()
-        if lower == 'true':
+        if lower == 'true' or lower == '1':
             return True
-        elif lower == 'false':
+        elif lower == 'false' or lower == '0':
             return False
-        raise ConvertError
+        raise TypeConvertException(value, self._type)

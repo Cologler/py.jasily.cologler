@@ -15,11 +15,29 @@ from jasily.convert import *
 
 
 class TestStringTypeConverter(unittest.TestCase):
-    def test_expect_None(self):
-        with self.assertRaises(ArgumentTypeException):
-            StringTypeConverter().convert(None, 1)
-        StringTypeConverter().convert(None, 1)
+    Converter = StringTypeConverter()
 
+    def test_expect_NOT_type(self):
+        with self.assertRaises(ArgumentTypeException):
+            self.Converter.convert(None, 1)
+        with self.assertRaises(ArgumentTypeException):
+            self.Converter.convert('None', 1)
+
+    def test_expect_NOT_value(self):
+        with self.assertRaises(ArgumentTypeException):
+            self.Converter.convert(str, 1)
+
+    def test_expect_NOT_support(self):
+        with self.assertRaises(TypeNotSupportException):
+            self.Converter.convert(object, '1')
+
+    def test_convert_bool(self):
+        self.assertEqual(True, self.Converter.convert(bool, 'true'))
+        self.assertEqual(True, self.Converter.convert(bool, '1'))
+        self.assertEqual(False, self.Converter.convert(bool, 'false'))
+        self.assertEqual(False, self.Converter.convert(bool, '0'))
+        with self.assertRaises(TypeConvertException):
+            self.assertEqual(False, self.Converter.convert(bool, '2'))
 
 def main(argv=None):
     if argv is None:
