@@ -10,9 +10,9 @@ import os
 import sys
 import traceback
 import unittest
+import colorama as c
 
 from jasily.exceptions import *
-
 
 class TestArgumentTypeException(unittest.TestCase):
     def test_ctor(self):
@@ -20,13 +20,15 @@ class TestArgumentTypeException(unittest.TestCase):
             ArgumentTypeException('str', 1)
 
     def test_tostr(self):
-        print(ArgumentTypeException(str, 1))
+        print('show str(ArgumentTypeException):')
+        print(c.Fore.LIGHTGREEN_EX + str(ArgumentTypeException(str, 1)))
 
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv
     try:
+        c.init(True)
         unittest.main()
     except Exception:
         traceback.print_exc()
