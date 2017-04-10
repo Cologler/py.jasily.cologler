@@ -7,6 +7,7 @@
 # ----------
 
 from . import check_arguments
+from .exceptions import ArgumentTypeException
 
 class ConvertError(Exception):
     pass
@@ -84,7 +85,60 @@ class StringConverter(Converter):
         raise ConvertError
 
 
+class TypeConvertException(Exception):
+    def __init__(self, value, except_type,
+                 error=None,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._value = value
+        self._error = error
+        self._except_type = except_type
 
 
+class TypeConverter:
+    G_TYPE = type
+
+    def __init__(self, from_type):
+        self._type = from_type
+        self._convmap = {}
+        for attr in [attr for attr in dir(self) if attr.startswith('to_')]:
+            func = getattr(self, attr)
+            ret = func.__annotations__.get('return')
+            if isinstance(ret, type):
+                self._convmap[ret] = func
+        if self._convmap.get(self._type) is None:
+            self._convmap[self._type] = self._to_self
+
+    def _to_self(self, value):
+        return value
+
+    def convert(self, type, value):
+        '''raise `TypeConvertException` is convert failed.'''
+        if type is None:
+            raise ArgumentTypeException(self.G_TYPE, None)
+        func = self._convmap.get(type)
+        if func is None:
+            raise NotImplementedError
+        try:
+            return func(value)
+        except Exception as err:
+            raise TypeConvertException(value, type, err)
 
 
+class StringTypeConverter(TypeConverter):
+    def __init__(self):
+        super().__init__(str)
+
+    def to_int(self, value: str) -> int:
+        return int(value)
+
+    def to_float(self, value: str) -> float:
+        return float(value)
+
+    def to_bool(self, value: str) -> bool:
+        lower = value.lower()
+        if lower == 'true':
+            return True
+        elif lower == 'false':
+            return False
+        raise ConvertError
