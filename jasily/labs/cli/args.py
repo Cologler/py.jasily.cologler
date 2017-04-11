@@ -22,8 +22,12 @@ arguments kinds:
 * If want to use value `-15`, add `\` before. value always ignore first `\` char.
 '''
 
-ENGLISG = 'qwertyuiopasdfghjklzxcvbnm'
-ENGLISG += ENGLISG.upper()
+def __init_ENGLISG():
+    e1 = ''.join([chr(x) for x in range(ord('a'), ord('z') + 1)])
+    e2 = ''.join([chr(x) for x in range(ord('A'), ord('Z') + 1)])
+    return e1 + e2
+    
+ENGLISG = __init_ENGLISG()
 
 class ArgumentParser:
     NAME_FIRST_CHARS = ENGLISG + '_-'

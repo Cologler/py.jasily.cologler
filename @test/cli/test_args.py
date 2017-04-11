@@ -13,6 +13,11 @@ import unittest
 
 from jasily.labs.cli.args import *
 
+class TestConstant(unittest.TestCase):
+    def test_ENGLISG(self):
+        self.assertEqual(ENGLISG, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        self.assertEqual(len(ENGLISG), 26 * 2)
+
 
 class TestArgumentParser(unittest.TestCase):
     def _assert_result_common(self, result: tuple):
