@@ -74,6 +74,12 @@ class UInt:
     def __int__(self):
         return self._value
 
+    def __str__(self):
+        return str(self._value)
+
+    def __hash__(self):
+        return hash(self._value)
+
     def __eq__(self, value):
         return self._value == value
 
@@ -89,4 +95,41 @@ class Set(set):
         set.add(self, v)
         return True
 
+
+class Char:
+    def __init__(self, ch: (str, int)):
+        self._value_int: int = None
+        self._value_str: str = None
+        if isinstance(ch, Char):
+            self._value_int = ch._value_int
+            self._value_str = ch._value_int
+        elif isinstance(ch, str):
+            if len(ch) != 1:
+                raise ValueError
+            self._value_str = ch
+            self._value_int = ord(ch)
+        elif isinstance(ch, int):
+            self._value_int = ch
+            self._value_str = chr(ch)
+        else:
+            raise ValueError
+
+    def __int__(self):
+        return self._value_int
+
+    def __str__(self):
+        return self._value_str
+
+    def __hash__(self):
+        return hash(self._value_int)
+
+    def __eq__(self, value):
+        if isinstance(value, Char):
+            return self._value_int == value._value_int
+        elif isinstance(value, str):
+            return str(self) == value
+        elif isinstance(value, int):
+            return int(self) == value
+        else:
+            return NotImplemented
 
