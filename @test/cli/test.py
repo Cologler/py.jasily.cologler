@@ -13,22 +13,6 @@ import unittest
 
 from jasily.cli import *
 
-class TestClass1:
-    @property
-    def p(self):
-        return 'property'
-
-    def m(self):
-        return 'method'
-
-    @classmethod
-    def cm(cls):
-        return 'classmethod'
-
-    @staticmethod
-    def sm():
-        return 'staticmethod'
-
 
 class TestEngine(unittest.TestCase):
     def test_simple_object(self):
@@ -52,12 +36,41 @@ class TestEngine(unittest.TestCase):
         with self.assertRaises(ParameterException):
             self.assertEqual(2, fire([1, 2]).execute(['1', '0'], True))
 
-    def test_sclass_NO_args(self):
+    def test_single_class_NO_args(self):
+        class TestClass1:
+            @property
+            def p(self):
+                return 'property'
+
+            def m(self):
+                return 'method'
+
+            @classmethod
+            def cm(cls):
+                return 'classmethod'
+
+            @staticmethod
+            def sm():
+                return 'staticmethod'
         e = fire(TestClass1)
         self.assertEqual('property', e.execute(['p']))
         self.assertEqual('method', e.execute(['m']))
         self.assertEqual('classmethod', e.execute(['cm']))
         self.assertEqual('staticmethod', e.execute(['sm']))
+
+    def test_single_class_args(self):
+        class TestClass1:
+            def args_list(self, obj: list):
+                return obj
+
+            def args_tuple(self, obj: tuple):
+                return obj
+
+        e = fire(TestClass1)
+        with self.assertRaises(ParameterException):
+            e.execute(['args_list'], True)
+        self.assertEqual(['324', '185'], e.execute(['args_list', '324', '185']))
+        self.assertEqual(('324', '185'), e.execute(['args_tuple', '324', '185']))
 
 
 def main(argv=None):

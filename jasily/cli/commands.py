@@ -62,6 +62,8 @@ class BaseCommand(Freezable):
         self._has_name = None
 
     def freeze(self):
+        if len(self._subcmds) == 1:
+            self._subcmds[0]._has_name = False
         super().freeze()
         for c in self._subcmds:
             c.freeze()
@@ -151,10 +153,7 @@ class ClassCommand(Command):
         super().__init__(descriptor)
         methods = [x for x in dir(self._descriptor.type) if not x.startswith('_')]
         for method in methods:
-            cmd = self._create_command(getattr(self._descriptor.described_object, method), method)
-            if len(methods) == 1:
-                cmd._has_name = False
-            self._register_command(cmd)
+            self.register(getattr(self._descriptor.described_object, method), method)
 
     def invoke(self, s: Session):
         s.instance = self._descriptor.instance()
@@ -207,7 +206,6 @@ class CallableCommand(Command):
 
     def resolve_parameter(self, s: Session):
         rargs = []
-        rkwargs = {}
         resolvers = tuple([create_resolver(s, i, p) for i, p in enumerate(self._parameters)])
 
         # resolve known type
@@ -238,10 +236,12 @@ class CallableCommand(Command):
             sargs = [x for x in sargs if not r.resolve_by_value(x)]
 
         # check all
+        if len(sargs) > 0:
+            argsstr = ', '.join([str(x) for x in sargs])
+            raise ParameterException('unknown arguments: <%s>' % argsstr)
         for r in resolvers:
             if not r.is_resolved():
                 raise ParameterException('parameter {name} is NOT resolved.', name=r.parameter.name)
-
         # end
         args = []
         kwargs = {}
@@ -316,14 +316,15 @@ class KeywordParameterResolver(ParameterResolver):
         return self.is_resolved()
 
     def __resolve_by_value(self, arg: ArgumentValue):
+        t = str if self._is_list else self._parameter.annotation
         try:
-            value = arg.value(self._session.engine.converter, self._parameter.annotation)
+            value = arg.value(self._session.engine.converter, t)
         except TypeConvertException as err:
             msg = 'cannot convert <"{value}"> to type <{type}>.'
             raw = arg.value(self._session.engine.converter, str)
             raise ParameterException(msg, value=raw, type=self._parameter.annotation.__name__)
         if self._is_list:
-            if self._value is None:
+            if self._value is Parameter.empty:
                 self._value = []
             self._value.append(value)
         else:
@@ -339,6 +340,8 @@ class KeywordParameterResolver(ParameterResolver):
 
     def resolve_by_value(self, arg: ArgumentValue):
         if arg.name != None:
+            return False
+        if not self._is_list and self.is_resolved():
             return False
         return self.__resolve_by_value(arg)
 
@@ -398,7 +401,7 @@ class CommandUsageFormater:
             if p.annotation is str:
                 pass
             elif p.annotation in LIST_ARGS:
-                name += ' ?, ...'
+                name = '[%s,...]' % name
             else:
                 name += ':' + p.annotation.__name__
 
