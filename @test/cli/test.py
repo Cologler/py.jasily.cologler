@@ -49,6 +49,8 @@ class TestEngine(unittest.TestCase):
         # list
         self.assertEqual(1, fire([1, 2]).execute(['0']))
         self.assertEqual(2, fire([1, 2]).execute(['1']))
+        with self.assertRaises(ParameterException):
+            self.assertEqual(2, fire([1, 2]).execute(['1', '0'], True))
 
     def test_sclass_NO_args(self):
         e = fire(TestClass1)

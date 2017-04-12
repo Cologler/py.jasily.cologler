@@ -146,6 +146,16 @@ class ArgumentValue:
             return converter.convert(annotation, self._value)
         raise ApiNotSupportException('annotation of parameter must be type.')
 
+    def __str__(self):
+        if self._value is None:
+            return '--' + self._name
+        elif self._name is None:
+            return self._value
+        else:
+            fmtext = '({name}: {value})'\
+                .format(index=self._index, name=self._name, value=self._value)
+            return fmtext
+
     def __repr__(self):
         fmtext = '[{index}] {name}: {value}'\
             .format(index=self._index, name=self._name, value=self._value)
