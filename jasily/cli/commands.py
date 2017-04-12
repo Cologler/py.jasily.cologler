@@ -122,13 +122,17 @@ class Command(BaseCommand):
     def __init__(self, descriptor: Descriptor):
         super().__init__()
         self._descriptor = descriptor
+        self._names = []
+        for name in self._descriptor.enumerate_names():
+            self._names.append(name.lower().replace('_', '-'))
 
     @property
     def descriptor(self):
         return self._descriptor
 
     def enumerate_names(self):
-        return self._descriptor.enumerate_names()
+        for n in self._names:
+            yield n
 
     @property
     def has_name(self):
