@@ -101,7 +101,7 @@ class BaseCommand(Freezable):
             return self._subcmds[0].invoke(s)
         else:
             cmd = args.try_popcmd()
-            sc = self._subcmds_map.get(cmd)
+            sc = self._subcmds_map.get(cmd.lower())
             if sc is None:
                 return s.usage()
             return sc.invoke(s)
