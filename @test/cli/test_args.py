@@ -11,7 +11,7 @@ import sys
 import traceback
 import unittest
 
-from jasily.labs.cli.args import *
+from jasily.cli.args import *
 
 class TestConstant(unittest.TestCase):
     def test_ENGLISG(self):
@@ -25,7 +25,7 @@ class TestArgumentParser(unittest.TestCase):
             assert isinstance(item, ArgumentValue)
             self.assertEqual(idx, item.index)
 
-    def test_1(self):
+    def test_example_1(self):
         argv = [
             'a1', 'a2', 'a3',
             '-FLAG', # -> 'F', 'L', 'A', 'G' 4 flag.
@@ -54,7 +54,6 @@ class TestArgumentParser(unittest.TestCase):
         self.assertEqual(tuple(result[13]), ('flag180', None))
         self.assertEqual(tuple(result[14]), ('flag050', None))
         self.assertEqual(tuple(result[15]), ('flag999', None))
-
 
 def main(argv=None):
     if argv is None:

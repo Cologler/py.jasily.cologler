@@ -45,25 +45,6 @@ class ValueContainer:
         self.__value = None
 
 
-__FREEZABLE_FLAG = '__JASILY_FREEZABLE_IS_FREEZED__'
-
-class Freezable:
-    '''provide a freezable check base class.'''
-    def freeze(self):
-        '''freeze object.'''
-        setattr(self, __FREEZABLE_FLAG, True)
-
-    @property
-    def is_freezed(self):
-        '''check if freezed.'''
-        return getattr(self, __FREEZABLE_FLAG, False)
-
-    def _raise_if_freezed(self):
-        '''raise `InvalidOperationException` if is freezed.'''
-        if self.is_freezed:
-            raise InvalidOperationException('obj is freezed.')
-
-
 class UInt:
     def __init__(self, value: int):
         v = int(value)

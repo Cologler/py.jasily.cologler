@@ -7,8 +7,7 @@
 # ----------
 
 from inspect import Parameter
-from ...exceptions import ApiNotSupportException, ArgumentValueException
-from ...convert import StringTypeConverter
+from ..exceptions import ApiNotSupportException, ArgumentValueException
 
 
 '''
@@ -26,7 +25,6 @@ def __init_ENGLISG():
     e1 = ''.join([chr(x) for x in range(ord('a'), ord('z') + 1)])
     e2 = ''.join([chr(x) for x in range(ord('A'), ord('Z') + 1)])
     return e1 + e2
-    
 ENGLISG = __init_ENGLISG()
 
 class ArgumentParser:
@@ -39,14 +37,21 @@ class ArgumentParser:
         self._result = []
         self._spliters = ('=', ':')
 
+    def __raise_argument_name(self, value: str, tryvalue: str):
+        msg = '{value} is invalid argument name. '
+        msg += "if you want to use '{tryvalue}', try input '\\{tryvalue}'"
+        raise ArgumentValueException(value, msg, tryvalue=tryvalue)
+
     def __check_argument_name(self, name: str):
         if len(name) == 0:
             raise NotImplementedError
+        def raise_err():
+            self.__raise_argument_name(name, name)
         if name[0] not in self.NAME_FIRST_CHARS:
-            raise NotImplementedError(name)
+            raise_err()
         for c in name[1:]:
             if c not in self.NAME_CHARS:
-                raise NotImplementedError(name)
+                raise_err()
 
     def __create(self, name, value):
         if name != None:
@@ -80,22 +85,30 @@ class ArgumentParser:
                 return self.__raise_unknown_name(k)
             k = k[2:]
             sp = self.__get_spliter(k)
-            if sp is None:
-                n = k
-                if len(self._args) > 0 and not self._args[0].startswith('-'):
-                    v = self._args.pop(0)
+            try:
+                if sp is None:
+                    n = k
+                    if len(self._args) > 0 and not self._args[0].startswith('-'):
+                        v = self._args.pop(0)
+                    else:
+                        v = None
+                    self._result.append(self.__create(n, v))
                 else:
-                    v = None
-                self._result.append(self.__create(n, v))
-            else:
-                n, v = k.split(sp, 2)
-                self._result.append(self.__create(n, v))
+                    n, v = k.split(sp, 2)
+                    self._result.append(self.__create(n, v))
+            except ArgumentValueException as err:
+                self.__raise_argument_name(n, '--' + n)
+                raise
 
         elif k.startswith('-'):
             if len(k) == 1:
                 return self.__raise_unknown_name(k)
             for x in k[1:]:
-                self._result.append(self.__create(x, None))
+                try:
+                    self._result.append(self.__create(x, None))
+                except ArgumentValueException as err:
+                    self.__raise_argument_name(x, '-' + x)
+                    raise
 
         else:
             self._result.append(self.__create(None, k))
@@ -106,25 +119,7 @@ class ArgumentParser:
         return tuple(self._result)
 
 
-class Arguments:
-    def __init__(self, argv):
-        self._filename = argv[0]
-
-        args = []
-        index = 0
-        for arg in argv[1:]:
-            if arg.startswith('--'):
-                raise NotImplementedError
-            elif arg.startswith('-'):
-                raise NotImplementedError
-            else:
-                index += 1
-        self._args = tuple(args)
-
-
 class ArgumentValue:
-    TypeConverter = StringTypeConverter
-
     def __init__(self, index: int, name: str, value: str):
         if value and value[0] == '\\':
             value = value[1:]
@@ -140,11 +135,15 @@ class ArgumentValue:
         yield self._name
         yield self._value
 
-    def value(self, annotation):
+    @property
+    def name(self):
+        return self._name
+
+    def value(self, converter, annotation):
         if annotation is Parameter.empty:
             return self._value
         if isinstance(annotation, type):
-            return self.TypeConverter.convert(annotation, self._value)
+            return converter.convert(annotation, self._value)
         raise ApiNotSupportException('annotation of parameter must be type.')
 
     def __repr__(self):
@@ -152,3 +151,22 @@ class ArgumentValue:
             .format(index=self._index, name=self._name, value=self._value)
         return fmtext
 
+
+class Arguments:
+    def __init__(self, argv):
+        self._filename = argv[0]
+        self._raw_args = tuple(argv[1:])
+        self._var_args = list(argv[1:])
+
+    @property
+    def filename(self):
+        return self._filename
+
+    def try_popcmd(self):
+        if len(self._var_args) > 0:
+            return self._var_args.pop(0)
+        else:
+            return None
+
+    def to_args(self):
+        return ArgumentParser(self._var_args).resolve()

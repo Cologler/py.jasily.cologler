@@ -17,25 +17,33 @@ class JasilyBaseException(Exception):
         self._kwargs = kwargs
 
     def __str__(self):
-        return '<%s> %s' % (type(self).__name__, self._build_str_core())
+        return '<%s> %s' % (type(self).__name__, self.message)
 
-    def _build_str_core(self):
-        raise NotImplementedError
+    @property
+    def message(self):
+        return ''
 
     @property
     def kwargs(self):
         return self._kwargs
 
 
-class ApiNotSupportException(JasilyBaseException):
-    ''''''
+class MessageException(JasilyBaseException):
     def __init__(self, message: str,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._message = message
 
-    def _build_str_core(self):
-        return self._message
+    @property
+    def message(self):
+        return self._message.format(**self.kwargs)
+
+    def __str__(self):
+        return self.message
+
+
+class ApiNotSupportException(MessageException):
+    pass
 
 
 class ArgumentException(JasilyBaseException):
@@ -72,18 +80,14 @@ class ArgumentTypeException(ArgumentException):
                              actual_type=actual_type)
 
 
-class ArgumentValueException(JasilyBaseException):
-    def __init__(self, actual_value, except_message: str,
+class ArgumentValueException(MessageException):
+    def __init__(self, actual_value,
                  *args, **kwargs):
         '''you can use {value} to format value.'''
         super().__init__(*args, **kwargs)
         self._actual_value = actual_value
-        self._except_message = except_message
-
-    def _build_str_core(self):
         value = jrepr(self._actual_value)
-        fmtext = self._except_message.format(value=value)
-        return fmtext
+        self.kwargs['value'] = value
 
 
 class InvalidOperationException(Exception):
@@ -99,13 +103,3 @@ class InvalidOperationException(Exception):
     def message(self):
         '''get message.'''
         return self._message
-
-
-
-
-__all__ = [
-    'InvalidOperationException',
-    'ArgumentTypeException'
-]
-
-
