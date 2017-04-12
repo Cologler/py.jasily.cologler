@@ -6,8 +6,6 @@
 #
 # ----------
 
-import os
-
 def jrepr(value):
     '''customized `repr()`.'''
     t = type(value)
