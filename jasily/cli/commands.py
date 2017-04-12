@@ -124,7 +124,8 @@ class Command(BaseCommand):
         self._descriptor = descriptor
         self._names = []
         for name in self._descriptor.enumerate_names():
-            self._names.append(name.lower().replace('_', '-'))
+            if name:
+                self._names.append(name.lower().replace('_', '-'))
 
     @property
     def descriptor(self):

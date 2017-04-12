@@ -6,7 +6,8 @@
 #
 # ----------
 
-from .exceptions import ParameterException
+from .typed import ISession, IEngine
+from .exceptions import RuntimeException
 from .core import EngineBuilder
 
 
@@ -16,6 +17,7 @@ def fire(obj):
 
 
 __all__ = [
-    'fire', 'EngineBuilder', 'ParameterException'
+    'ISession', 'IEngine',
+    'fire', 'EngineBuilder', 'RuntimeException'
 ]
 

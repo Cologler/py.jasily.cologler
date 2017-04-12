@@ -12,6 +12,7 @@ import traceback
 import unittest
 
 from jasily.cli import *
+from jasily.cli.exceptions import ParameterException
 
 
 class TestEngine(unittest.TestCase):
@@ -68,9 +69,9 @@ class TestEngine(unittest.TestCase):
 
         e = fire(TestClass1)
         with self.assertRaises(ParameterException):
-            e.execute(['args_list'], True)
-        self.assertEqual(['324', '185'], e.execute(['args_list', '324', '185']))
-        self.assertEqual(('324', '185'), e.execute(['args_tuple', '324', '185']))
+            e.execute(['args-list'], True)
+        self.assertEqual(['324', '185'], e.execute(['args-list', '324', '185']))
+        self.assertEqual(('324', '185'), e.execute(['args-tuple', '324', '185']))
 
 
 def main(argv=None):

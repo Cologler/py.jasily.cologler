@@ -11,7 +11,7 @@ import sys
 
 from ..exceptions import ArgumentTypeException
 from ..convert import StringTypeConverter
-from .exceptions import CliException
+from .exceptions import CliException, RuntimeException
 from .typed import IEngine
 from .commands import (
     Session,
@@ -74,6 +74,8 @@ class Engine(IEngine):
         s = Session(self, argv)
         try:
             return self._rootcmd.invoke(s)
+        except RuntimeException as err:
+            print(err.message)
         except CliException as err:
             if keep_error:
                 raise
