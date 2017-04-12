@@ -111,11 +111,11 @@ class BaseCommand(Freezable):
         return False
 
     @property
-    def has_parameters(self):
+    def can_execute(self):
         return False
 
-    def parameters(self):
-        return []
+    def subcmds(self):
+        return tuple(self._subcmds)
 
 
 class Command(BaseCommand):
@@ -141,13 +141,6 @@ class Command(BaseCommand):
         return super().invoke(s)
 
 
-class PropertyCommand(Command):
-    def invoke(self, s: Session):
-        s.add_cmd(self)
-        s.freeze()
-        return getattr(s.instance, self._descriptor.name)
-
-
 class ClassCommand(Command):
     def __init__(self, descriptor: Descriptor):
         super().__init__(descriptor)
@@ -164,7 +157,27 @@ class RootCommand(BaseCommand):
     pass
 
 
-class CallableCommand(Command):
+class ExecuteableCommand(Command):
+    @property
+    def can_execute(self):
+        return True
+
+    @property
+    def has_parameters(self):
+        return False
+
+    def parameters(self):
+        return []
+
+
+class PropertyCommand(ExecuteableCommand):
+    def invoke(self, s: Session):
+        s.add_cmd(self)
+        s.freeze()
+        return getattr(s.instance, self._descriptor.name)
+
+
+class CallableCommand(ExecuteableCommand):
     def __init__(self, descriptor: Descriptor):
         super().__init__(descriptor)
         self._parameters = None
@@ -248,6 +261,7 @@ class CallableCommand(Command):
         for r in resolvers:
             r.build(args, kwargs)
         return args, kwargs
+
 
 def create_resolver(s: Session, i: int, parameter: Parameter):
     kwargs = {
@@ -415,22 +429,43 @@ class CommandUsageFormater:
         docs.append('Usage:')
 
         parts = []
+        parts.append(self.on_filename())
+
+        trees = list(self._session.cmds())
+        names = list([list(x.enumerate_names())[0] for x in trees if x.has_name])
+        for n in names:
+            parts.append(n)
+        header = '   ' + ' '.join(parts)
+
+        for l in self.on_cmd(trees[-1]):
+            docs.append(header + ' ' + l)
+        return docs
+
+    def on_filename(self) -> str:
         fn = self._session.args.filename
         if ' ' in fn:
-            parts.append('"' + fn + '"')
+            return '"' + fn + '"'
         else:
-            parts.append(fn)
-        lc = None
-        for c in self._session.cmds():
-            assert isinstance(c, Command)
-            if c.has_name:
-                parts.append(list(c.enumerate_names())[0])
-            lc = c
+            return fn
 
-        if lc.has_parameters:
-            ps = lc.parameters()
-            for p in ps:
+    def on_cmd(self, cmd: Command):
+        if cmd.can_execute:
+            return self.on_execcmd(cmd)
+        else:
+            return self.on_treecmd(cmd)
+
+    def on_treecmd(self, cmd: Command):
+        sc = cmd.subcmds()
+        if len(sc) == 1:
+            return self.on_cmd(cmd)
+        for c in sc:
+            yield list(c.enumerate_names())[0]
+
+    def on_execcmd(self, cmd: ExecuteableCommand):
+        if cmd.has_parameters:
+            parts = []
+            for p in cmd.parameters():
                 parts.append(self._parse_parameter(p))
-
-        docs.append('   ' + ' '.join([x for x in parts]))
-        return docs
+            yield ' '.join(parts)
+        else:
+            yield ''
