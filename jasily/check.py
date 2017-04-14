@@ -30,7 +30,7 @@ class _Checker:
         raise NotImplementedError
 
     @staticmethod
-    def create(annotation, allow_complex=True):
+    def create(annotation):
         if annotation == Parameter.empty:
             return None
         elif annotation is None:
@@ -54,13 +54,11 @@ class _Checker:
             return _TypeChecker(annotation)
         elif isinstance(annotation, (tuple, list)):
             if len(annotation) == 1: # unpack
-                return _Checker.create(annotation[0], allow_complex)
+                return _Checker.create(annotation[0])
             if all([isinstance(z, type) for z in annotation]):
                 return _TupleChecker(annotation)
-            elif allow_complex:
-                return _ComplexChecker(annotation)
             else:
-                return None
+                return _ComplexChecker(annotation)
         elif callable(annotation):
             return _CallableChecker(annotation)
         raise NotImplementedError('unknown annotation contract.')
@@ -115,9 +113,10 @@ class _ComplexChecker(_Checker):
                 other.append(item)
         self._checkers = []
         if len(types) > 0:
-            self._checkers.append(_Checker.create(tuple(types), False))
-        if len(other) > 0:
-            self._checkers.append(_Checker.create(tuple(other), False))
+            self._checkers.append(_Checker.create(tuple(types)))
+        if other:
+            for x in other:
+                self._checkers.append(_Checker.create(x))
 
     def check(self, value) -> bool:
         if len(self._checkers) == 0:
@@ -189,7 +188,7 @@ class AnnotationChecker:
         self._annotation = annotation
         if self._annotation is None:
             self._annotation = type(None)
-        self._checker = _Checker.create(annotation, True)
+        self._checker = _Checker.create(annotation)
 
     @property
     def name(self):
