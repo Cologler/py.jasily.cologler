@@ -36,7 +36,7 @@ class _Checker:
         elif annotation is None:
             return _TypeChecker(type(None))
         elif isinstance(annotation, typing.GenericMeta):
-            if annotation.__origin__ is typing.List:
+            if annotation.__origin__ in (typing.List, typing.Set):
                 assert len(annotation.__args__) == 1
                 t = annotation.__args__[0]
                 return _TypedCollectionChecker(annotation, t)
