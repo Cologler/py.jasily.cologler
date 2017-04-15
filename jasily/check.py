@@ -11,8 +11,6 @@ from inspect import signature, Parameter
 import typing
 from .exceptions import InvalidOperationException
 
-G_TYPE = type
-
 def _raise(actual_value: object, expected: (type, str)):
     expected_str = expected if isinstance(expected, str) else expected.__name__
     raise TypeError("type error (expected %s, got %s)" % (
@@ -31,10 +29,12 @@ class _Checker:
 
     @staticmethod
     def create(annotation):
-        if annotation == Parameter.empty:
+        if annotation is Parameter.empty:
             return None
+
         elif annotation is None:
             return _TypeChecker(type(None))
+
         elif isinstance(annotation, typing.GenericMeta):
             if annotation.__origin__ in (typing.List, typing.Set):
                 assert len(annotation.__args__) == 1
@@ -45,13 +45,16 @@ class _Checker:
                 return _TypedDictChecker(annotation, k, v)
             else:
                 NotImplementedError('unknown typing.GenericMeta: <%s>' % annotation)
+
         elif isinstance(annotation, typing.TupleMeta):
             if annotation.__origin__ is typing.Tuple:
                 return _TypedTupleChecker(annotation, annotation.__args__)
             else:
                 NotImplementedError('unknown typing.TupleMeta: <%s>' % annotation)
+
         elif isinstance(annotation, type):
             return _TypeChecker(annotation)
+
         elif isinstance(annotation, (tuple, list)):
             if len(annotation) == 1: # unpack
                 return _Checker.create(annotation[0])
@@ -59,8 +62,10 @@ class _Checker:
                 return _TupleChecker(annotation)
             else:
                 return _ComplexChecker(annotation)
+
         elif callable(annotation):
             return _CallableChecker(annotation)
+
         raise NotImplementedError('unknown annotation contract.')
 
 
@@ -89,11 +94,12 @@ class _TupleChecker(_Checker):
 class _CallableChecker(_Checker):
     def __init__(self, callable: callable):
         self._callable = callable
-        self._name = _get_func_name(callable)
-        self._sign = signature(callable)
-        if len(self._sign.parameters) != 1:
+        name = getattr(callable, '__name__', None)
+        if len(signature(callable).parameters) != 1:
+            fn = name + ' ' if name else ''
             raise InvalidOperationException(
-                'function %s contains too many args (only support 1).' % self._name)
+                'function %scontains too many args (only support 1).' % fn)
+        self._name = name or 'func'
 
     def check(self, value) -> bool:
         return self._callable(value)
@@ -107,13 +113,15 @@ class _ComplexChecker(_Checker):
         types = []
         other = []
         for item in items:
-            if isinstance(item, type):
+            if item is None:
+                types.append(type(None))
+            elif isinstance(item, type):
                 types.append(item)
             else:
                 other.append(item)
         self._checkers = []
         if len(types) > 0:
-            self._checkers.append(_Checker.create(tuple(types)))
+            self._checkers.append(_TupleChecker(tuple(types)))
         if other:
             for x in other:
                 self._checkers.append(_Checker.create(x))
