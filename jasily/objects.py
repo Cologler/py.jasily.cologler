@@ -71,10 +71,9 @@ class UInt:
 
 class Set(set):
     def add(self, v):
-        if v in self:
-            return False
+        size = len(self)
         set.add(self, v)
-        return True
+        return len(self) > size
 
 
 class Char:
