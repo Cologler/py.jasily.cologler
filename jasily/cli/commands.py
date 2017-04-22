@@ -385,7 +385,6 @@ class KeywordParameterResolver(ParameterResolver):
 class _VarParameterResolver(ParameterResolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        raise NotImplementedError
 
     def accept_value(self):
         return True
@@ -399,6 +398,12 @@ class VarPosotionalParameterResolver(_VarParameterResolver):
         super().__init__(*args, **kwargs)
         self._args = []
 
+    def resolve_by_value(self, arg: ArgumentValue):
+        if arg.name != None and arg.name != self.parameter.name:
+            return False
+        self._args.append(arg.value(self._session.engine.converter, str))
+        return True
+
     def build(self, args: list, kwargs: dict):
         for a in self._args:
             args.append(a)
@@ -408,6 +413,14 @@ class VarKeywordParameterResolver(_VarParameterResolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._args = {}
+
+    def resolve_by_name(self, arg: ArgumentValue):
+        if arg.name != None or arg.name != self.parameter.name:
+            return False
+        if arg.name in self._args:
+            raise ParameterException('conflict arguments: <{name}>', name=arg.name)
+        self._args[arg.name] = arg.value(self._session.engine.converter, str)
+        return True
 
     def build(self, args: list, kwargs: dict):
         for k in self._args:
