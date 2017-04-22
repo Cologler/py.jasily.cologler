@@ -68,13 +68,15 @@ class BaseCommand(Freezable):
         for c in self._subcmds:
             c.freeze()
 
-    def register(self, obj, name=None):
+    def register(self, obj, name=None,
+                 alias: list=None):
         self.raise_if_freezed()
-        cmd = self._create_command(obj, name)
-        self._register_command(cmd)
 
-    def _create_command(self, obj, name):
+        # build command
         descriptor = describe(obj, name)
+        if alias:
+            for a in alias:
+                descriptor.add_alias(alias)
         if isinstance(descriptor, CallableDescriptor):
             cmd = CallableCommand(descriptor)
         elif isinstance(descriptor, PropertyDescriptor):
@@ -83,9 +85,8 @@ class BaseCommand(Freezable):
             cmd = ClassCommand(descriptor)
         else:
             raise NotImplementedError
-        return cmd
 
-    def _register_command(self, cmd):
+        # map command
         for name in cmd.enumerate_names():
             cc = self._subcmds_map.get(name)
             if cc != None and cc != cmd:
@@ -449,7 +450,7 @@ class CommandUsageFormater:
             parts.append(n)
         header = '   ' + ' '.join(parts)
 
-        for l in self.on_cmd(trees[-1]):
+        for l in self.on_cmd(trees[-1] if len(trees) > 0 else self._session.engine.rootcmd):
             docs.append(header + ' ' + l)
         return docs
 

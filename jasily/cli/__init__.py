@@ -15,10 +15,10 @@ from .exceptions import RuntimeException
 from .core import EngineBuilder
 
 
-def fire(obj):
+def fire(obj, argv=sys.argv, **kwargs):
     '''same with `EngineBuilder().add(obj).build().execute(sys.argv)`'''
     engine = EngineBuilder().add(obj).build()
-    return engine.execute(sys.argv)
+    return engine.execute(argv, **kwargs)
 
 
 __all__ = [

@@ -9,6 +9,7 @@
 import os
 import sys
 
+from ..d import descriptor
 from ..exceptions import ArgumentTypeException
 from ..convert import StringTypeConverter
 from .exceptions import (
@@ -42,7 +43,7 @@ class EngineBuilder:
         self._rootcmd = RootCommand()
         self._converter = CliStringTypeConverter()
 
-    def add(self, obj):
+    def add(self, obj, **kwargs):
         self._rootcmd.register(obj)
         return self
 
@@ -60,11 +61,26 @@ class EngineBuilder:
             raise ArgumentTypeException(CliStringTypeConverter, value)
         self._converter = value
 
+    @descriptor
+    def command(self, *args, **kwargs):
+        '''
+        command(func) -> func
+        command(alias) -> descriptor
+        '''
+        if len(args) == 1 and len(kwargs) == 0:
+            self.add(args[0])
+            return args[0]
+        raise NotImplementedError
+
 
 class Engine(IEngine):
     def __init__(self, builder: EngineBuilder):
         self._rootcmd = builder._rootcmd
         self._converter = builder.converter
+
+    @property
+    def rootcmd(self):
+        return self._rootcmd
 
     @property
     def converter(self):
