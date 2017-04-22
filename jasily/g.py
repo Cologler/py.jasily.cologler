@@ -3,8 +3,7 @@
 #
 # Copyright (c) 2017 - cologler <skyoflw@gmail.com>
 # ----------
-# the builtins type.
-# this lib should never import any library.
+# the builtins types.
 # ----------
 
 import sys
