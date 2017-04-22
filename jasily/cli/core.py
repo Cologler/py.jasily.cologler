@@ -11,8 +11,14 @@ import sys
 
 from ..exceptions import ArgumentTypeException
 from ..convert import StringTypeConverter
-from .exceptions import CliException, RuntimeException
-from .typed import IEngine
+from .exceptions import (
+    CliException,
+    RuntimeException
+)
+from .typed import (
+    IEngine,
+    IFile, IFolder
+)
 from .commands import (
     Session,
     Command, RootCommand
@@ -20,7 +26,15 @@ from .commands import (
 
 
 class CliStringTypeConverter(StringTypeConverter):
-    pass
+    def to_file(self, v) -> IFile:
+        if os.path.isfile(v):
+            return IFile(v)
+        raise ValueError
+
+    def to_folder(self, v) -> IFolder:
+        if os.path.isfile(v):
+            return IFolder(v)
+        raise ValueError
 
 
 class EngineBuilder:

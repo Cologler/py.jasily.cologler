@@ -117,7 +117,7 @@ class TypeConvertException(JasilyBaseException):
 
 class TypeConverter:
     def __init__(self, from_type):
-        if not isinstance(from_type, g.type):
+        if not isinstance(from_type, global_type):
             raise ArgumentTypeException(global_type, from_type)
 
         self._type = from_type

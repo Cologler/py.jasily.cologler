@@ -101,7 +101,9 @@ class BaseCommand(Freezable):
             return self._subcmds[0].invoke(s)
         else:
             cmd = args.try_popcmd()
-            sc = self._subcmds_map.get(cmd.lower())
+            sc = None
+            if cmd != None:
+                sc = self._subcmds_map.get(cmd.lower())
             if sc is None:
                 return s.usage()
             return sc.invoke(s)
@@ -318,6 +320,11 @@ class KeywordParameterResolver(ParameterResolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._is_list = self._parameter.annotation in LIST_ARGS
+        if self._parameter.annotation != Parameter.empty:
+            if not isinstance(self._parameter.annotation, type):
+                n = str(self._parameter.annotation)
+                raise InvalidOperationException('not support parameter annotation <%s>' % n)
+
 
     def accept_value(self):
         if self._is_list:
