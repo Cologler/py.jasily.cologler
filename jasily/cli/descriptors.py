@@ -8,15 +8,21 @@
 
 import os
 
+from ..g import global_type
 from .wrappers import wrap
 
-G_TYPE = type
 
 class Descriptor:
     def __init__(self, obj):
         self._obj = obj
         self._name: str = None
-        self._type: G_TYPE = None
+        self._type: global_type = None
+        self._alias: list = None
+        self._doc: str = getattr(obj, '__doc__', '')
+
+    @property
+    def doc(self):
+        return self._doc
 
     @property
     def name(self):
@@ -33,9 +39,17 @@ class Descriptor:
 
     def enumerate_names(self):
         yield self._name
+        if self._alias:
+            for n in self._alias:
+                yield n
 
     def instance(self):
         raise NotImplementedError
+
+    def add_alias(self, s: str):
+        if self._alias is None:
+            self._alias = []
+        self._alias.append(s)
 
 
 class TypeDescriptor(Descriptor):

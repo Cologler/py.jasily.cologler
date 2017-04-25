@@ -21,3 +21,7 @@ class NameConflictException(CliException):
     def __init__(self, name: str, message: str):
         super().__init__(message, name=name)
 
+
+class RuntimeException(CliException):
+    def __init__(self, message: str):
+        super().__init__(message)

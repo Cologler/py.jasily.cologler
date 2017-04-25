@@ -12,29 +12,30 @@ import traceback
 import unittest
 
 from jasily.cli import *
+from jasily.cli.exceptions import ParameterException
 
 
 class TestEngine(unittest.TestCase):
     def test_simple_object(self):
         # float
-        self.assertEqual(3.3, fire(3.3).execute([]))
+        self.assertEqual(3.3, fire(3.3, []))
         # int
-        self.assertEqual(3, fire(3).execute([]))
+        self.assertEqual(3, fire(3, []))
         # str
-        self.assertEqual('3', fire('3').execute([]))
+        self.assertEqual('3', fire('3', []))
         # dict
-        self.assertEqual('3', fire({'2': '3'}).execute(['2']))
-        self.assertEqual(5, fire({'2': '3', '4': 5}).execute(['4']))
+        self.assertEqual('3', fire({'2': '3'}, ['2']))
+        self.assertEqual(5, fire({'2': '3', '4': 5}, ['4']))
         # tuple
-        self.assertEqual(1, fire((1, 2)).execute(['0']))
-        self.assertEqual(2, fire((1, 2)).execute(['1']))
+        self.assertEqual(1, fire((1, 2), ['0']))
+        self.assertEqual(2, fire((1, 2), ['1']))
         with self.assertRaises(ParameterException):
-            self.assertEqual(None, fire((1, 2)).execute(['\\-1'], True))
+            self.assertEqual(None, fire((1, 2), ['\\-1'], keep_error=True))
         # list
-        self.assertEqual(1, fire([1, 2]).execute(['0']))
-        self.assertEqual(2, fire([1, 2]).execute(['1']))
+        self.assertEqual(1, fire([1, 2], ['0']))
+        self.assertEqual(2, fire([1, 2], ['1']))
         with self.assertRaises(ParameterException):
-            self.assertEqual(2, fire([1, 2]).execute(['1', '0'], True))
+            self.assertEqual(2, fire([1, 2], ['1', '0'], keep_error=True))
 
     def test_single_class_NO_args(self):
         class TestClass1:
@@ -52,7 +53,7 @@ class TestEngine(unittest.TestCase):
             @staticmethod
             def sm():
                 return 'staticmethod'
-        e = fire(TestClass1)
+        e = EngineBuilder().add(TestClass1).build()
         self.assertEqual('property', e.execute(['p']))
         self.assertEqual('method', e.execute(['m']))
         self.assertEqual('classmethod', e.execute(['cm']))
@@ -66,11 +67,11 @@ class TestEngine(unittest.TestCase):
             def args_tuple(self, obj: tuple):
                 return obj
 
-        e = fire(TestClass1)
+        e = EngineBuilder().add(TestClass1).build()
         with self.assertRaises(ParameterException):
-            e.execute(['args_list'], True)
-        self.assertEqual(['324', '185'], e.execute(['args_list', '324', '185']))
-        self.assertEqual(('324', '185'), e.execute(['args_tuple', '324', '185']))
+            e.execute(['args-list'], True)
+        self.assertEqual(['324', '185'], e.execute(['args-list', '324', '185']))
+        self.assertEqual(('324', '185'), e.execute(['args-tuple', '324', '185']))
 
 
 def main(argv=None):

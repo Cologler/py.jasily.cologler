@@ -6,16 +6,24 @@
 #
 # ----------
 
-from .exceptions import ParameterException
+import sys
+from .typed import (
+    ISession, IEngine,
+    IFile, IFolder
+)
+from .exceptions import RuntimeException
 from .core import EngineBuilder
 
 
-def fire(obj):
-    '''same with `EngineBuilder().add(obj).build()`'''
-    return EngineBuilder().add(obj).build()
+def fire(obj, argv=sys.argv, **kwargs):
+    '''same with `EngineBuilder().add(obj).build().execute(sys.argv)`'''
+    engine = EngineBuilder().add(obj).build()
+    return engine.execute(argv, **kwargs)
 
 
 __all__ = [
-    'fire', 'EngineBuilder', 'ParameterException'
+    'ISession', 'IEngine',
+    'IFile', 'IFolder',
+    'fire', 'EngineBuilder', 'RuntimeException'
 ]
 

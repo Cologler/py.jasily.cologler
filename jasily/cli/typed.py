@@ -26,3 +26,9 @@ def maptype(s: ISession):
     return typedmap
 
 
+class IFile(str):
+    pass
+
+
+class IFolder(str):
+    pass

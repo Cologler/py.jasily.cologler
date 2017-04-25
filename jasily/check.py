@@ -7,8 +7,8 @@
 # ----------
 
 import inspect
-from inspect import signature
-from inspect import Parameter
+from inspect import signature, Parameter
+import typing
 from .exceptions import InvalidOperationException
 
 def _raise(actual_value: object, expected: (type, str)):
@@ -19,93 +19,176 @@ def _raise(actual_value: object, expected: (type, str)):
 def _get_func_name(func):
     return getattr(func, '__name__', 'func')
 
-def check_callable(func):
-    if callable(func):
-        return
-    name = _get_func_name(func)
-    _raise(name, 'callable')
-
-class _ExpectedChecker:
+class _Checker:
     def check(self, value) -> bool:
         '''check if value match this checker.'''
         raise NotImplementedError
+
     def __str__(self) -> str:
         raise NotImplementedError
 
-class _TypeExpectedChecker(_ExpectedChecker):
-    def __init__(self, expected_type: type):
-        self._expected_type = expected_type
-    def check(self, value) -> bool:
-        return isinstance(value, self._expected_type)
-    def __str__(self) -> str:
-        return self._expected_type.__name__
+    @staticmethod
+    def create(annotation):
+        if annotation is Parameter.empty:
+            return None
 
-class _TypeTupleExpectedChecker(_ExpectedChecker):
-    def __init__(self, expected_types: tuple):
-        self._expected_types = expected_types
-    def check(self, value) -> bool:
-        return isinstance(value, self._expected_types)
-    def __str__(self) -> str:
-        return '/'.join([x.__name__ for x in self._expected_types])
+        elif annotation is None:
+            return _TypeChecker(type(None))
 
-class _CallableExpectedChecker(_ExpectedChecker):
-    def __init__(self, expected_callable: callable):
-        self._expected_callable = expected_callable
-        self._name = _get_func_name(expected_callable)
-        self._sign = signature(expected_callable)
-        if len(self._sign.parameters) != 1:
+        elif isinstance(annotation, typing.GenericMeta):
+            if annotation.__origin__ in (typing.List, typing.Set):
+                assert len(annotation.__args__) == 1
+                t = annotation.__args__[0]
+                return _TypedCollectionChecker(annotation, t)
+            elif annotation.__origin__ is typing.Dict:
+                k, v = annotation.__args__
+                return _TypedDictChecker(annotation, k, v)
+            else:
+                NotImplementedError('unknown typing.GenericMeta: <%s>' % annotation)
+
+        elif isinstance(annotation, typing.TupleMeta):
+            if annotation.__origin__ is typing.Tuple:
+                return _TypedTupleChecker(annotation, annotation.__args__)
+            else:
+                NotImplementedError('unknown typing.TupleMeta: <%s>' % annotation)
+
+        elif isinstance(annotation, type):
+            return _TypeChecker(annotation)
+
+        elif isinstance(annotation, (tuple, list)):
+            if len(annotation) == 1: # unpack
+                return _Checker.create(annotation[0])
+            if all([isinstance(z, type) for z in annotation]):
+                return _TupleChecker(annotation)
+            else:
+                return _ComplexChecker(annotation)
+
+        elif callable(annotation):
+            return _CallableChecker(annotation)
+
+        raise NotImplementedError('unknown annotation contract.')
+
+
+class _TypeChecker(_Checker):
+    def __init__(self, type):
+        self._type = type
+
+    def check(self, value) -> bool:
+        return isinstance(value, self._type)
+
+    def __str__(self) -> str:
+        return self._type.__name__
+
+
+class _TupleChecker(_Checker):
+    def __init__(self, types: tuple):
+        self._types = tuple(types) # types maybe list.
+
+    def check(self, value) -> bool:
+        return isinstance(value, self._types)
+
+    def __str__(self) -> str:
+        return '/'.join([x.__name__ for x in self._types])
+
+
+class _CallableChecker(_Checker):
+    def __init__(self, callable: callable):
+        self._callable = callable
+        name = getattr(callable, '__name__', None)
+        if len(signature(callable).parameters) != 1:
+            fn = name + ' ' if name else ''
             raise InvalidOperationException(
-                'function %s contains too many args (only support 1).' % self._name)
+                'function %scontains too many args (only support 1).' % fn)
+        self._name = name or 'func'
+
     def check(self, value) -> bool:
-        return self._expected_callable(value)
+        return self._callable(value)
+
     def __str__(self) -> str:
         return self._name + '()'
 
-class _ComplexExpectedChecker(_ExpectedChecker):
-    def __init__(self, expected_tuple: tuple):
-        self._expected_tuple = expected_tuple
-        expected_types = []
-        expected_other = []
-        for item in self._expected_tuple:
-            if isinstance(item, type) or item is None:
-                expected_types.append(item or type(None))
+
+class _ComplexChecker(_Checker):
+    def __init__(self, items: tuple):
+        types = []
+        other = []
+        for item in items:
+            if item is None:
+                types.append(type(None))
+            elif isinstance(item, type):
+                types.append(item)
             else:
-                expected_other.append(item)
+                other.append(item)
         self._checkers = []
-        if len(expected_types) > 0:
-            self._checkers.append(_expected_checker(tuple(expected_types), False))
-        if len(expected_other) > 0:
-            self._checkers.append(_expected_checker(tuple(expected_other), False))
+        if len(types) > 0:
+            self._checkers.append(_TupleChecker(tuple(types)))
+        if other:
+            for x in other:
+                self._checkers.append(_Checker.create(x))
+
     def check(self, value) -> bool:
-        for checker in self._checkers:
-            if checker.check(value):
-                return True
-        return False
+        if len(self._checkers) == 0:
+            return True
+        return any([c.check(value) for c in self._checkers])
+
     def __str__(self):
         return '/'.join([str(x) for x in self._checkers])
 
-def _expected_checker(annotation, allow_complex=True) -> _ExpectedChecker:
-    if annotation == Parameter.empty:
-        return None
-    elif annotation is None:
-        return _TypeExpectedChecker(type(None))
-    elif isinstance(annotation, type):
-        return _TypeExpectedChecker(annotation)
-    elif isinstance(annotation, tuple):
-        if len(annotation) == 1: # unpack
-            return _expected_checker(annotation[0], allow_complex)
-        is_all_type = True
-        for item in annotation:
-            if not isinstance(item, type):
-                is_all_type = False
-                break
-        if is_all_type:
-            return _TypeTupleExpectedChecker(annotation)
-        elif allow_complex:
-            return _ComplexExpectedChecker(annotation)
-    elif callable(annotation):
-        return _CallableExpectedChecker(annotation)
-    raise NotImplementedError('unknown annotation contract.')
+
+class _GenericChecker(_Checker):
+    def __init__(self, type, t):
+        self._type = type
+
+    def check(self, value) -> bool:
+        if not isinstance(self._type):
+            return False
+        return self._check_items(value)
+
+    def _check_items(self, items) -> bool:
+        raise NotImplementedError
+
+
+class _TypedCollectionChecker(_GenericChecker):
+    def __init__(self, type, t):
+        super().__init__(type)
+        self._t = t
+
+    def _check_items(self, items) -> bool:
+        for t in items:
+            if not isinstance(t, self._t):
+                return False
+        return True
+
+
+class _TypedDictChecker(_GenericChecker):
+    def __init__(self, type, keytype, valuetype):
+        super().__init__(type)
+        self._k = keytype
+        self._v = valuetype
+
+    def _check_items(self, items) -> bool:
+        for t in items.keys():
+            if not isinstance(t, self._k):
+                return False
+        for t in items.values():
+            if not isinstance(t, self._v):
+                return False
+        return True
+
+
+class _TypedTupleChecker(_GenericChecker):
+    def __init__(self, type, types):
+        super().__init__(type)
+        self._types = tuple(types)
+
+    def _check_items(self, items) -> bool:
+        if len(self._types) != len(items):
+            return False
+        for i in range(0, self._types):
+            if not isinstance(items[i], self._types[i]):
+                return False
+        return True
+
 
 class AnnotationChecker:
     def __init__(self, name: str, annotation):
@@ -113,7 +196,7 @@ class AnnotationChecker:
         self._annotation = annotation
         if self._annotation is None:
             self._annotation = type(None)
-        self._checker = _expected_checker(annotation, True)
+        self._checker = _Checker.create(annotation)
 
     @property
     def name(self):
@@ -132,14 +215,14 @@ class AnnotationChecker:
         return value
 
     def _raise_error(self, value):
+        name = self.name
+        if name == 'return':
+            name = 'return value'
+        else:
+            name = 'parameter <%s>' % name
         raise TypeError("%s type error (expected %s, got %s)" % (
             self.name, self._checker, type(value).__name__))
 
-class ParameterAnnotationChecker(AnnotationChecker):
-    @property
-    def name(self):
-        '''get parameter name.'''
-        return 'parameter [%s]' % self._name
 
 def _wrap(wrapper, func, sign=None):
     '''make wrapper sign same as func.'''
@@ -148,6 +231,7 @@ def _wrap(wrapper, func, sign=None):
     wrapper.__name__ = func.__name__
     wrapper.__signature__ = sign or inspect.Signature.from_callable(func)
     return wrapper
+
 
 def check_arguments(func):
     '''
@@ -170,9 +254,9 @@ def check_arguments(func):
     @check_arguments
     def method(cls): pass
     '''
-    check_callable(func)
     sign = signature(func)
-    checkers = [ParameterAnnotationChecker(x.name, x.annotation) for x in sign.parameters.values()]
+    annotations = [x for x in sign.parameters.values() if x.annotation != Parameter.empty]
+    checkers = [AnnotationChecker(x.name, x.annotation) for x in annotations]
     checkers_map = dict(zip([x.name for x in checkers], checkers))
     def _function(*args, **kwargs):
         for index, checker in enumerate(checkers[:len(args)]):
@@ -205,27 +289,16 @@ def check_return(func):
     @check_return
     def method(cls): pass
     '''
-    check_callable(func)
-    expected_type = func.__annotations__.get('return', Parameter.empty)
-    checker = AnnotationChecker('return value', expected_type)
+    annotation = func.__annotations__.get('return', Parameter.empty)
+    if annotation is Parameter.empty:
+        return func
+    checker = AnnotationChecker('return', annotation)
     def _function(*args, **kwargs):
         return checker.check(func(*args, **kwargs))
     return _wrap(_function, func)
 
-def check_type(actual_value, *expected_type):
-    '''
-    check if value match type.
-    raise TypeError if not match.
-    '''
-    checker = AnnotationChecker('return value', expected_type)
-    checker.check(actual_value)
 
 __all__ = [
-    # function
-    'check_callable',
-    'check_type',
-
-    # decorator
     'check_arguments',
     'check_return'
 ]

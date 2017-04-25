@@ -36,48 +36,36 @@ class MessageException(JasilyBaseException):
 
     @property
     def message(self):
-        return self._message.format(**self.kwargs)
+        return (self._message  or '').format(**self.kwargs)
 
     def __str__(self):
         return self.message
 
 
-class ApiNotSupportException(MessageException):
-    pass
-
-
-class ArgumentException(JasilyBaseException):
+class ArgumentException(MessageException):
     '''a Exception for argument error.'''
-    def __init__(self, parameter_name: str=None, message: str=None,
+    def __init__(self, message: str, parameter_name: str=None,
                  *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(message, *args, **kwargs)
         self._parameter_name = parameter_name
-        self._message = message or ''
-
-    def _build_str_core(self):
-        if self._parameter_name is None:
-            return self._message
-        else:
-            return '[ERROR ON PARAMETER %s] %s' % (self._parameter_name, self._message)
+        self.kwargs['parameter_name'] = parameter_name
 
 
 class ArgumentTypeException(ArgumentException):
     def __init__(self, except_type, actual_value,
                  *args, **kwargs):
-        super().__init__(*args, **kwargs)
         if not isinstance(except_type, type):
             raise ArgumentTypeException(type, except_type)
-        self._except_type = except_type
-        self._actual_value = actual_value
-
-    def _build_str_core(self):
-        actual_type = "'None'" if self._actual_value is None else type(self._actual_value).__name__
-
-        fmtext = 'param <{name}> value type error:'
+        actual_type = "'None'" if actual_value is None else type(actual_value).__name__
+        fmtext = 'param <{parameter_name}> value type error:'
         fmtext += ' (expected <{except_type}>, got <{actual_type}>)'
-        return fmtext.format(name=self._parameter_name or '?',
-                             except_type=self._except_type.__name__,
-                             actual_type=actual_type)
+        fmtext = 'param <{parameter_name}> value type error:' +\
+                 ' (expected <{except_type}>, got <{actual_type}>)'
+        super().__init__(fmtext,
+                         parameter_name=kwargs.get('parameter_name', '?'),
+                         except_type=except_type.__name__,
+                         actual_type=actual_type,
+                         *args, **kwargs)
 
 
 class ArgumentValueException(MessageException):
@@ -90,16 +78,22 @@ class ArgumentValueException(MessageException):
         self.kwargs['value'] = value
 
 
-class InvalidOperationException(Exception):
+class InvalidArgumentException(MessageException):
+    def __init__(self, parameter_name: str,
+                 *args, **kwargs):
+        super().__init__('', parameter_name, *args, **kwargs)
+
+
+class ApiNotSupportException(MessageException):
+    '''
+    this is a little like `NotImplementedError`,
+    but we donot want to impl it.
+    '''
+
+
+class InvalidOperationException(MessageException):
     '''a Exception define for invalid operation.'''
-    def __init__(self, message: str=None):
-        super().__init__()
-        self._message = message or ''
+    def __init__(self, message: str=None,
+                 *args, **kwargs):
+        super().__init__(message or '', *args, **kwargs)
 
-    def __str__(self):
-        return self._message
-
-    @property
-    def message(self):
-        '''get message.'''
-        return self._message

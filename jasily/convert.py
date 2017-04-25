@@ -7,11 +7,14 @@
 # ----------
 
 from . import check_arguments
+from .g import global_type
 from .exceptions import JasilyBaseException, ArgumentTypeException
 from .objects import UInt
 
+
 class ConvertError(Exception):
     pass
+
 
 class Converter:
     _cached = {}
@@ -113,11 +116,9 @@ class TypeConvertException(JasilyBaseException):
 
 
 class TypeConverter:
-    G_TYPE = type
-
     def __init__(self, from_type):
-        if not isinstance(from_type, self.G_TYPE):
-            raise ArgumentTypeException(self.G_TYPE, from_type)
+        if not isinstance(from_type, global_type):
+            raise ArgumentTypeException(global_type, from_type)
 
         self._type = from_type
         self._convmap = {}
@@ -132,13 +133,17 @@ class TypeConverter:
     def _to_self(self, value):
         return value
 
+    def can_convert_type(self, type):
+        func = self._convmap.get(type)
+        return func != None
+
     def convert(self, type, value):
         '''
         raise `TypeNotSupportException` is cannot convert;\n
         raise `TypeConvertException` is convert failed;
         '''
-        if not isinstance(type, self.G_TYPE):
-            raise ArgumentTypeException(self.G_TYPE, type)
+        if not isinstance(type, global_type):
+            raise ArgumentTypeException(global_type, type)
         if not isinstance(value, self._type):
             raise ArgumentTypeException(self._type, value)
 

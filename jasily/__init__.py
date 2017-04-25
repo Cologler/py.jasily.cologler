@@ -12,9 +12,7 @@ from .exceptions import InvalidOperationException
 from .lang import switch
 from .check import (
     check_arguments,
-    check_return,
-    check_callable,
-    check_type
+    check_return
 )
 
 def pip_require(module_name, pip_name=None):

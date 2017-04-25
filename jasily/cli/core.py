@@ -9,10 +9,17 @@
 import os
 import sys
 
-from ..exceptions import ArgumentTypeException
+from ..d import descriptor
+from ..exceptions import ArgumentTypeException, InvalidOperationException
 from ..convert import StringTypeConverter
-from .exceptions import CliException
-from .typed import IEngine
+from .exceptions import (
+    CliException,
+    RuntimeException
+)
+from .typed import (
+    IEngine,
+    IFile, IFolder
+)
 from .commands import (
     Session,
     Command, RootCommand
@@ -20,7 +27,15 @@ from .commands import (
 
 
 class CliStringTypeConverter(StringTypeConverter):
-    pass
+    def to_file(self, v) -> IFile:
+        if os.path.isfile(v):
+            return IFile(v)
+        raise ValueError
+
+    def to_folder(self, v) -> IFolder:
+        if os.path.isfile(v):
+            return IFolder(v)
+        raise ValueError
 
 
 class EngineBuilder:
@@ -28,8 +43,8 @@ class EngineBuilder:
         self._rootcmd = RootCommand()
         self._converter = CliStringTypeConverter()
 
-    def add(self, obj):
-        self._rootcmd.register(obj)
+    def add(self, obj, **kwargs):
+        self._rootcmd.register(obj, **kwargs)
         return self
 
     def build(self):
@@ -46,11 +61,33 @@ class EngineBuilder:
             raise ArgumentTypeException(CliStringTypeConverter, value)
         self._converter = value
 
+    @descriptor
+    def command(self, *args, **kwargs):
+        '''
+        command(func) -> func
+        command(alias) -> descriptor
+        '''
+        if len(args) > 0:
+            if len(kwargs) > 0:
+                raise InvalidOperationException
+            if len(args) != 1:
+                raise InvalidOperationException
+        if len(args) == 1 and len(kwargs) == 0:
+            self.add(args[0])
+            return args[0]
+        def wrap(func):
+            return self.add(func, **kwargs)
+        return wrap
+
 
 class Engine(IEngine):
     def __init__(self, builder: EngineBuilder):
         self._rootcmd = builder._rootcmd
         self._converter = builder.converter
+
+    @property
+    def rootcmd(self):
+        return self._rootcmd
 
     @property
     def converter(self):
@@ -74,6 +111,8 @@ class Engine(IEngine):
         s = Session(self, argv)
         try:
             return self._rootcmd.invoke(s)
+        except RuntimeException as err:
+            print(err.message)
         except CliException as err:
             if keep_error:
                 raise
