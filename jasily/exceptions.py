@@ -78,6 +78,12 @@ class ArgumentValueException(MessageException):
         self.kwargs['value'] = value
 
 
+class InvalidArgumentException(MessageException):
+    def __init__(self, parameter_name: str,
+                 *args, **kwargs):
+        super().__init__('', parameter_name, *args, **kwargs)
+
+
 class ApiNotSupportException(MessageException):
     '''
     this is a little like `NotImplementedError`,
@@ -87,3 +93,7 @@ class ApiNotSupportException(MessageException):
 
 class InvalidOperationException(MessageException):
     '''a Exception define for invalid operation.'''
+    def __init__(self, message: str=None,
+                 *args, **kwargs):
+        super().__init__(message or '', *args, **kwargs)
+

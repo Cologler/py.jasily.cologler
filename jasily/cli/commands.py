@@ -10,7 +10,11 @@ import os
 from inspect import signature, Parameter
 
 from ..utils.objects import Freezable
-from ..exceptions import InvalidOperationException, ArgumentValueException
+from ..exceptions import (
+    InvalidOperationException,
+    ArgumentValueException,
+    InvalidArgumentException
+)
 from ..convert import TypeConvertException
 
 from .exceptions import NameConflictException, ParameterException
@@ -68,15 +72,11 @@ class BaseCommand(Freezable):
         for c in self._subcmds:
             c.freeze()
 
-    def register(self, obj, name=None,
-                 alias: list=None):
+    def register(self, obj, name=None, **kwargs):
         self.raise_if_freezed()
 
         # build command
         descriptor = describe(obj, name)
-        if alias:
-            for a in alias:
-                descriptor.add_alias(alias)
         if isinstance(descriptor, CallableDescriptor):
             cmd = CallableCommand(descriptor)
         elif isinstance(descriptor, PropertyDescriptor):
@@ -85,6 +85,14 @@ class BaseCommand(Freezable):
             cmd = ClassCommand(descriptor)
         else:
             raise NotImplementedError
+
+        # from kwargs
+        if len(kwargs) > 0:
+            alias = kwargs.pop('alias', '')
+            if alias:
+                cmd.add_alias(alias)
+        if len(kwargs) > 0:
+            raise InvalidArgumentException(kwargs.keys()[0])
 
         # map command
         for name in cmd.enumerate_names():
@@ -124,11 +132,17 @@ class BaseCommand(Freezable):
 class Command(BaseCommand):
     def __init__(self, descriptor: Descriptor):
         super().__init__()
+        self._doc = None
         self._descriptor = descriptor
         self._names = []
         for name in self._descriptor.enumerate_names():
             if name:
                 self._names.append(name.lower().replace('_', '-'))
+
+    @property
+    def doc(self):
+        '''get doc from command.'''
+        return self._doc or self._descriptor.doc
 
     @property
     def descriptor(self):
@@ -147,6 +161,15 @@ class Command(BaseCommand):
     def invoke(self, s: Session):
         s.add_cmd(self)
         return super().invoke(s)
+
+    def add_alias(self, name):
+        if isinstance(name, str):
+            self._names.append(name)
+        elif isinstance(name, list):
+            for n in name:
+                self.add_alias(n)
+        else:
+            raise NotImplementedError
 
 
 class ClassCommand(Command):
@@ -321,11 +344,15 @@ class KeywordParameterResolver(ParameterResolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._is_list = self._parameter.annotation in LIST_ARGS
+        self._targrt_type = str
         if self._parameter.annotation != Parameter.empty:
             if not isinstance(self._parameter.annotation, type):
                 n = str(self._parameter.annotation)
                 raise InvalidOperationException('not support parameter annotation <%s>' % n)
-
+            self._targrt_type = self._parameter.annotation
+        elif self._parameter.default != Parameter.empty:
+            if self._parameter.default != None:
+                self._targrt_type = type(self._parameter.default)
 
     def accept_value(self):
         if self._is_list:
@@ -343,7 +370,7 @@ class KeywordParameterResolver(ParameterResolver):
         return self.is_resolved()
 
     def __resolve_by_value(self, arg: ArgumentValue):
-        t = str if self._is_list else self._parameter.annotation
+        t = str if self._is_list else self._targrt_type
         try:
             value = arg.value(self._session.engine.converter, t)
         except TypeConvertException as err:
@@ -430,6 +457,7 @@ class VarKeywordParameterResolver(_VarParameterResolver):
 class CommandUsageFormater:
     def __init__(self, s: Session):
         self._session = s
+        self._docs = []
 
     def _parse_parameter(self, p: Parameter):
         if p.default is Parameter.empty:
@@ -451,7 +479,7 @@ class CommandUsageFormater:
         return name
 
     def strings(self) -> list:
-        docs = []
+        docs = self._docs
         docs.append('Usage:')
 
         parts = []
@@ -485,7 +513,12 @@ class CommandUsageFormater:
         if len(sc) == 1:
             return self.on_cmd(cmd)
         for c in sc:
-            yield list(c.enumerate_names())[0]
+            ns = list(c.enumerate_names())
+            assert len(ns) > 0
+            if len(ns) == 1:
+                yield ns[0]
+            else:
+                yield '%s (%s)' % (ns[0], '/'.join(ns[1:]))
 
     def on_execcmd(self, cmd: ExecuteableCommand):
         if cmd.has_parameters:
@@ -495,3 +528,7 @@ class CommandUsageFormater:
             yield ' '.join(parts)
         else:
             yield ''
+        doc = cmd.doc
+        if doc:
+            for line in doc.splitlines():
+                self._docs.append(' ' * 6 + line)

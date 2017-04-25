@@ -18,6 +18,11 @@ class Descriptor:
         self._name: str = None
         self._type: global_type = None
         self._alias: list = None
+        self._doc: str = getattr(obj, '__doc__', '')
+
+    @property
+    def doc(self):
+        return self._doc
 
     @property
     def name(self):

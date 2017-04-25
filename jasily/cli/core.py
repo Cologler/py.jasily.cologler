@@ -10,7 +10,7 @@ import os
 import sys
 
 from ..d import descriptor
-from ..exceptions import ArgumentTypeException
+from ..exceptions import ArgumentTypeException, InvalidOperationException
 from ..convert import StringTypeConverter
 from .exceptions import (
     CliException,
@@ -44,7 +44,7 @@ class EngineBuilder:
         self._converter = CliStringTypeConverter()
 
     def add(self, obj, **kwargs):
-        self._rootcmd.register(obj)
+        self._rootcmd.register(obj, **kwargs)
         return self
 
     def build(self):
@@ -67,10 +67,17 @@ class EngineBuilder:
         command(func) -> func
         command(alias) -> descriptor
         '''
+        if len(args) > 0:
+            if len(kwargs) > 0:
+                raise InvalidOperationException
+            if len(args) != 1:
+                raise InvalidOperationException
         if len(args) == 1 and len(kwargs) == 0:
             self.add(args[0])
             return args[0]
-        raise NotImplementedError
+        def wrap(func):
+            return self.add(func, **kwargs)
+        return wrap
 
 
 class Engine(IEngine):
