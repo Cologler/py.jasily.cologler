@@ -23,5 +23,5 @@ def ensure_not_None(obj, name: str):
 def ensure_iterable(obj, name: str):
     '''raise `ArgumentValueException` if obj cannot enumerate.'''
     if not is_iterable(obj):
-        raise ArgumentValueException('obj', obj, '{value} is not enumerable.')
+        raise ArgumentValueException('obj', obj, '{value} is not iterable.')
 
