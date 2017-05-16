@@ -6,14 +6,11 @@
 #
 # ----------
 
+from collections import Iterable
 from inspect import signature
 
 
-def is_enumerable(obj):
-    if not hasattr(obj, '__iter__'):
-        return False
-    if len(signature(obj.__iter__).parameters) != 0:
-        return False
-    return True
+def is_iterable(obj):
+    return isinstance(obj, Iterable)
 
 

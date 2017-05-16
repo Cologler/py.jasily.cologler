@@ -220,7 +220,7 @@ class Char:
 class Enumerable:
     def __init__(self, obj):
         ensure_not_None(obj, 'obj')
-        ensure_enumerable(obj, 'obj')
+        ensure_iterable(obj, 'obj')
         self._obj = obj
 
     def print_repr(self, max_count = None):
