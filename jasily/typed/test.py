@@ -10,7 +10,7 @@ from inspect import signature
 
 
 def is_enumerable(obj):
-    if getattr(obj, '__iter__', None) is None:
+    if not hasattr(obj, '__iter__'):
         return False
     if len(signature(obj.__iter__).parameters) != 0:
         return False
