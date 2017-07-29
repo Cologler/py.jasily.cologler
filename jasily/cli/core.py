@@ -93,7 +93,7 @@ class Engine(IEngine):
     def converter(self):
         return self._converter
 
-    def execute(self, argv, keep_error=False):
+    def execute(self, argv, keep_error=False, state=None):
         if argv is None:
             raise ValueError
         if isinstance(argv, tuple):
@@ -120,7 +120,7 @@ class Engine(IEngine):
                 msg += colorama.Style.RESET_ALL
             print(msg)
 
-        s = Session(self, argv)
+        s = Session(self, argv, state)
         try:
             return self._rootcmd.invoke(s)
         except RuntimeException as err:

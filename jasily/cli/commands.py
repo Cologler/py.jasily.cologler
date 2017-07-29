@@ -24,11 +24,16 @@ from .args import Arguments, ArgumentValue
 
 
 class Session(ISession, Freezable):
-    def __init__(self, engine, argv):
+    def __init__(self, engine, argv, state):
         self._engine = engine
         self._args = Arguments(argv)
+        self._state = state
         self._instance = None
         self._cmdchain = []
+
+    @property
+    def state(self):
+        return self._state
 
     @property
     def args(self):
