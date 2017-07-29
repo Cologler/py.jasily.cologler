@@ -44,11 +44,30 @@ class MessageException(JasilyBaseException):
 
 class ArgumentException(MessageException):
     '''a Exception for argument error.'''
-    def __init__(self, message: str, parameter_name: str=None,
-                 *args, **kwargs):
+    def __init__(self, name: str, message: str, *args, **kwargs):
         super().__init__(message, *args, **kwargs)
-        self._parameter_name = parameter_name
-        self.kwargs['parameter_name'] = parameter_name
+        self._name = name
+        self.kwargs['name'] = name
+        self.kwargs['parameter_name'] = name
+
+    @property
+    def name(self):
+        '''The name of parameter.'''
+        return self._name
+
+
+class ArgumentValueException(ArgumentException):
+    def __init__(self, name: str, value, message: str, *args, **kwargs):
+        '''you can use {value} to format value.'''
+        super().__init__(name, message, *args, **kwargs)
+        self._value = value
+        self.kwargs['value'] = jrepr(value)
+
+
+class ArgumentNoneException(ArgumentValueException):
+    def __init__(self, name: str, message: str=None, *args, **kwargs):
+        message = message or 'parameter <{name}> cannot be `None`.'
+        super().__init__(name, None, message)
 
 
 class ArgumentTypeException(ArgumentException):
@@ -57,25 +76,15 @@ class ArgumentTypeException(ArgumentException):
         if not isinstance(except_type, type):
             raise ArgumentTypeException(type, except_type)
         actual_type = "'None'" if actual_value is None else type(actual_value).__name__
-        fmtext = 'param <{parameter_name}> value type error:'
+        fmtext = 'param <{name}> value type error:'
         fmtext += ' (expected <{except_type}>, got <{actual_type}>)'
-        fmtext = 'param <{parameter_name}> value type error:' +\
+        fmtext = 'param <{name}> value type error:' +\
                  ' (expected <{except_type}>, got <{actual_type}>)'
         super().__init__(fmtext,
-                         parameter_name=kwargs.get('parameter_name', '?'),
+                         parameter_name=kwargs.get('name', '?'),
                          except_type=except_type.__name__,
                          actual_type=actual_type,
                          *args, **kwargs)
-
-
-class ArgumentValueException(MessageException):
-    def __init__(self, actual_value,
-                 *args, **kwargs):
-        '''you can use {value} to format value.'''
-        super().__init__(*args, **kwargs)
-        self._actual_value = actual_value
-        value = jrepr(self._actual_value)
-        self.kwargs['value'] = value
 
 
 class InvalidArgumentException(MessageException):

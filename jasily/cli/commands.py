@@ -388,7 +388,7 @@ class KeywordParameterResolver(ParameterResolver):
     def resolve_by_name(self, arg: ArgumentValue):
         if arg.name != self._parameter.name:
             return False
-        if not self._is_list and self.is_resolved():
+        if not self._is_list and self._value != Parameter.empty:
             raise ParameterException('conflict arguments: <{name}>', name=arg.name)
         return self.__resolve_by_value(arg)
 

@@ -7,7 +7,11 @@
 # ----------
 
 import uuid
-from .exceptions import InvalidOperationException
+from .exceptions import (
+    ArgumentNoneException,
+    InvalidOperationException
+)
+from .typed.ensures import *
 
 class __NotFound:
     '''a object for not found value.'''
@@ -211,3 +215,30 @@ class Char:
             return int(self) == value
         else:
             return NotImplemented
+
+
+class Enumerable:
+    def __init__(self, obj):
+        ensure_not_None(obj, 'obj')
+        ensure_iterable(obj, 'obj')
+        self._obj = obj
+
+    def print_repr(self, max_count = None):
+        if max_count is None:
+            source = list(enumerate(self._obj))
+            count = len(source)
+        else:
+            source = []
+            for i, v in enumerate(self._obj):
+                if i < max_count:
+                    source.append((i, v))
+            count = None if getattr(self._obj, '__len__', None) is None else len(self._obj)
+
+        lines = []
+        meta = 'count: {count}'.format(count=count or '?')
+        lines.append('{ %s }' % meta)
+        rjust = len(str(len(source)))
+        for i, v in source:
+            lines.append('[%s] %s' % (str(i).rjust(rjust), repr(v)))
+        print('\n'.join(lines))
+

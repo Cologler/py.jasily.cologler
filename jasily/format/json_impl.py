@@ -15,9 +15,11 @@ class JsonSerializer:
         return json.dumps(d, indent=2)
 
     def __serialize_value(self, v):
+        if v is None:
+            return v
         if isinstance(v, dict):
             return self.__serialize_dict(v)
-        elif isinstance(v, (int, float, list, bool)):
+        elif isinstance(v, (int, float, list, bool, str, list)):
             return v
         else:
             return self.__serialize_dict(v.__dict__)
