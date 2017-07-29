@@ -19,7 +19,7 @@ class JsonSerializer:
             return v
         if isinstance(v, dict):
             return self.__serialize_dict(v)
-        elif isinstance(v, (int, float, list, bool, str)):
+        elif isinstance(v, (int, float, list, bool, str, list)):
             return v
         else:
             return self.__serialize_dict(v.__dict__)
