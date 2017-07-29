@@ -236,14 +236,11 @@ class CallableCommand(ExecuteableCommand):
         if self._parameters is None:
             self._parameters = tuple(signature(func).parameters.values())
         # resolve parameters
-        if len(self._parameters) > 0:
-            try:
-                args, kwargs = self.resolve_parameter(s)
-            except ParameterException:
-                raise
-        else:
-            args = []
-            kwargs = {}
+        try:
+            args, kwargs = self.resolve_parameter(s)
+        except ParameterException:
+            raise
+
         # invoke
         s.freeze()
         return func(*args, **kwargs)
