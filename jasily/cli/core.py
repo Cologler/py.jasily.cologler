@@ -108,14 +108,26 @@ class Engine(IEngine):
         elif argv[0] != sys.argv[0]:
             argv.insert(0, sys.argv[0])
 
+        def print_error(msg):
+            colorama = None
+            try:
+                import colorama
+            except ModuleNotFoundError:
+                pass
+            if colorama != None:
+                colorama.init()
+                msg = colorama.Fore.LIGHTRED_EX + msg
+                msg += colorama.Style.RESET_ALL
+            print(msg)
+
         s = Session(self, argv)
         try:
             return self._rootcmd.invoke(s)
         except RuntimeException as err:
-            print(err.message)
+            print_error(err.message)
         except CliException as err:
             if keep_error:
                 raise
             else:
-                print(err.message)
+                print_error(err.message)
                 return s.usage()
