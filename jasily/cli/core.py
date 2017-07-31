@@ -22,7 +22,8 @@ from .typed import (
 )
 from .commands import (
     Session,
-    Command, RootCommand
+    Command, RootCommand,
+    UsageOptions
 )
 
 
@@ -38,16 +39,26 @@ class CliStringTypeConverter(StringTypeConverter):
         raise ValueError
 
 
+class EngineOptions:
+    def __init__(self):
+        self._usage_options: UsageOptions = UsageOptions()
+
+    @property
+    def usage_options(self) -> UsageOptions:
+        return self._usage_options
+
+
 class EngineBuilder:
     def __init__(self):
         self._rootcmd = RootCommand()
         self._converter = CliStringTypeConverter()
+        self._options = EngineOptions()
 
     def add(self, obj, **kwargs):
         self._rootcmd.register(obj, **kwargs)
         return self
 
-    def build(self):
+    def build(self) -> IEngine:
         self._rootcmd.freeze()
         return Engine(self)
 
@@ -79,11 +90,20 @@ class EngineBuilder:
             return self.add(func, **kwargs)
         return wrap
 
+    @property
+    def options(self):
+        return self._options
+
 
 class Engine(IEngine):
     def __init__(self, builder: EngineBuilder):
         self._rootcmd = builder._rootcmd
         self._converter = builder.converter
+        self._options = builder.options
+
+    @property
+    def options(self):
+        return self._options
 
     @property
     def rootcmd(self):

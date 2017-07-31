@@ -110,7 +110,7 @@ class BaseCommand(Freezable):
     def invoke(self, s: Session):
         args = s.args
         if len(self._subcmds) == 0:
-            raise NotImplementedError
+            raise NotImplementedError('There are no implemented commands.')
         elif len(self._subcmds) == 1:
             return self._subcmds[0].invoke(s)
         else:
@@ -137,7 +137,7 @@ class BaseCommand(Freezable):
 class Command(BaseCommand):
     def __init__(self, descriptor: Descriptor):
         super().__init__()
-        self._doc = None
+        self._doc = None # command doc from engine builder.
         self._descriptor = descriptor
         self._names = []
         for name in self._descriptor.enumerate_names():
@@ -456,9 +456,25 @@ class VarKeywordParameterResolver(_VarParameterResolver):
             kwargs[k] = args
 
 
+class UsageOptions:
+    def __init__(self):
+        self._show_doc = True
+
+    @property
+    def show_doc(self):
+        '''get whether show doc on list commands.'''
+        return self._show_doc
+
+    @show_doc.setter
+    def show_doc(self, value):
+        '''set whether show doc on list commands.'''
+        self._show_doc = value
+
+
 class CommandUsageFormater:
     def __init__(self, s: Session):
         self._session = s
+        self._options = s.engine.options.usage_options
         self._docs = []
 
     def _parse_parameter(self, p: Parameter):
@@ -518,9 +534,13 @@ class CommandUsageFormater:
             ns = list(c.enumerate_names())
             assert len(ns) > 0
             if len(ns) == 1:
-                yield ns[0]
+                line = ns[0]
             else:
-                yield '%s (%s)' % (ns[0], '/'.join(ns[1:]))
+                line = '%s (%s)' % (ns[0], '/'.join(ns[1:]))
+            if self._options.show_doc:
+                if c.doc != None:
+                    line += '\n' + c.doc
+            yield line
 
     def on_execcmd(self, cmd: ExecuteableCommand):
         if cmd.has_parameters:

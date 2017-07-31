@@ -16,11 +16,13 @@ class CommandObject:
 
 class ValueCommandObject(CommandObject):
     def get(self):
+        '''show value.'''
         return self._data
 
 
 class SubscriptableCommandObject(CommandObject):
     def get(self, index: UInt):
+        '''get value from sequence by index.'''
         index = int(index)
         if index < len(self._data):
             return self._data[index]
@@ -29,11 +31,13 @@ class SubscriptableCommandObject(CommandObject):
 
 class DictCommandObject(CommandObject):
     def get(self, key: str):
+        '''get value from dict by key.'''
         return self._data.get(key, None)
 
 
 class IterableCommandObject(CommandObject):
     def get(self, index: int):
+        '''get value from sequence by index.'''
         for item in self._data:
             if index == 0:
                 return item

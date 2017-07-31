@@ -22,6 +22,7 @@ class Descriptor:
 
     @property
     def doc(self):
+        '''get doc from command descriptor.'''
         return self._doc
 
     @property
