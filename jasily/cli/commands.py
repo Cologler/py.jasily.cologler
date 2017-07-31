@@ -22,6 +22,15 @@ from .typed import *
 from .descriptors import *
 from .args import Arguments, ArgumentValue
 
+try:
+    import colorama
+    colorama.init()
+    Fore_LIGHTYELLOW = colorama.Fore.LIGHTYELLOW_EX
+    Style_RESET_ALL = colorama.Style.RESET_ALL
+except ModuleNotFoundError:
+    Fore_LIGHTYELLOW = ''
+    Style_RESET_ALL = ''
+
 
 class Session(ISession, Freezable):
     def __init__(self, engine, argv, state):
@@ -57,6 +66,7 @@ class Session(ISession, Freezable):
         self._cmdchain.append(cmd)
 
     def cmds(self):
+        '''router commands.'''
         return tuple(self._cmdchain)
 
     def usage(self):
@@ -476,6 +486,7 @@ class CommandUsageFormater:
         self._session = s
         self._options = s.engine.options.usage_options
         self._docs = []
+        self._indent_unit = 3
 
     def _parse_parameter(self, p: Parameter):
         if p.default is Parameter.empty:
@@ -496,24 +507,28 @@ class CommandUsageFormater:
 
         return name
 
+    def indent(self, index: int):
+        return ' ' * self._indent_unit * index
+
     def strings(self) -> list:
         docs = self._docs
-        docs.append('Usage:')
+        docs.append(Fore_LIGHTYELLOW + 'Usage:' + Style_RESET_ALL)
+        docs.append(self.indent(1) + Fore_LIGHTYELLOW + 'Script Path:' + Style_RESET_ALL)
+        docs.append(self.indent(2) + self.get_filename())
 
         parts = []
-        parts.append(self.on_filename())
-
         trees = list(self._session.cmds())
-        names = list([list(x.enumerate_names())[0] for x in trees if x.has_name])
-        for n in names:
-            parts.append(n)
-        header = '   ' + ' '.join(parts)
+        if len(trees) > 0:
+            names = list([list(x.enumerate_names())[0] for x in trees if x.has_name])
+            for n in names:
+                parts.append(n)
+            header = '   ' + ' '.join(parts)
+            docs.append(self.indent(1) + 'Route Commands: ' + header)
 
-        for l in self.on_cmd(trees[-1] if len(trees) > 0 else self._session.engine.rootcmd):
-            docs.append(header + ' ' + l)
+        self.on_cmd(trees[-1] if len(trees) > 0 else self._session.engine.rootcmd)
         return docs
 
-    def on_filename(self) -> str:
+    def get_filename(self) -> str:
         fn = self._session.args.filename
         if ' ' in fn:
             return '"' + fn + '"'
@@ -530,6 +545,8 @@ class CommandUsageFormater:
         sc = cmd.subcmds()
         if len(sc) == 1:
             return self.on_cmd(cmd)
+        docs = self._docs
+        docs.append(self.indent(1) + Fore_LIGHTYELLOW + 'Sub Commands:' + Style_RESET_ALL)
         for c in sc:
             ns = list(c.enumerate_names())
             assert len(ns) > 0
@@ -537,20 +554,21 @@ class CommandUsageFormater:
                 line = ns[0]
             else:
                 line = '%s (%s)' % (ns[0], '/'.join(ns[1:]))
+            docs.append(self.indent(2) + line)
             if self._options.show_doc:
                 if c.doc != None:
-                    line += '\n' + c.doc
-            yield line
+                    docs.append(self.indent(3) + c.doc)
 
     def on_execcmd(self, cmd: ExecuteableCommand):
+        docs = self._docs
         if cmd.has_parameters:
             parts = []
             for p in cmd.parameters():
                 parts.append(self._parse_parameter(p))
-            yield ' '.join(parts)
+            docs.append(' '.join(parts))
         else:
-            yield ''
+            pass
         doc = cmd.doc
         if doc:
             for line in doc.splitlines():
-                self._docs.append(' ' * 6 + line)
+                docs.append(self.indent(2) + line)
