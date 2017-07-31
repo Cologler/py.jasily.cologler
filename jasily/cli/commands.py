@@ -522,8 +522,9 @@ class CommandUsageFormater:
             names = list([list(x.enumerate_names())[0] for x in trees if x.has_name])
             for n in names:
                 parts.append(n)
-            header = '   ' + ' '.join(parts)
-            docs.append(self.indent(1) + 'Route Commands: ' + header)
+            header = ' '.join(parts)
+            docs.append(self.indent(1) + Fore_LIGHTYELLOW + 'Route Commands: ' + Style_RESET_ALL)
+            docs.append(self.indent(2) + header)
 
         self.on_cmd(trees[-1] if len(trees) > 0 else self._session.engine.rootcmd)
         return docs
@@ -546,7 +547,7 @@ class CommandUsageFormater:
         if len(sc) == 1:
             return self.on_cmd(cmd)
         docs = self._docs
-        docs.append(self.indent(1) + Fore_LIGHTYELLOW + 'Sub Commands:' + Style_RESET_ALL)
+        docs.append(self.indent(1) + Fore_LIGHTYELLOW + 'Accept sub Commands:' + Style_RESET_ALL)
         for c in sc:
             ns = list(c.enumerate_names())
             assert len(ns) > 0
@@ -562,13 +563,15 @@ class CommandUsageFormater:
     def on_execcmd(self, cmd: ExecuteableCommand):
         docs = self._docs
         if cmd.has_parameters:
+            docs.append(self.indent(1) + Fore_LIGHTYELLOW + 'Parameters:' + Style_RESET_ALL)
             parts = []
             for p in cmd.parameters():
                 parts.append(self._parse_parameter(p))
-            docs.append(' '.join(parts))
+            docs.append(self.indent(2) + ' '.join(parts))
         else:
             pass
         doc = cmd.doc
         if doc:
+            docs.append(self.indent(1) + Fore_LIGHTYELLOW + 'Description:' + Style_RESET_ALL)
             for line in doc.splitlines():
                 docs.append(self.indent(2) + line)
