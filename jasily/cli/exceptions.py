@@ -6,22 +6,33 @@
 #
 # ----------
 
-from ..exceptions import JasilyBaseException, MessageException
+class CliException(Exception):
+    def __init__(self, message: str):
+        self._message = message
+
+    @property
+    def message(self):
+        return self._message
+
+    def __str__(self):
+        return self.message
 
 
-class CliException(MessageException):
+class UserInputException(CliException):
+    '''raise when user input cannot pass to command.'''
     pass
 
 
-class ParameterException(CliException):
+class ApplicationException(CliException):
+    '''
+    raise when the application has error code.
+    this should only happen when you debug the cli.
+    '''
     pass
-
-
-class NameConflictException(CliException):
-    def __init__(self, name: str, message: str):
-        super().__init__(message, name=name)
 
 
 class RuntimeException(CliException):
-    def __init__(self, message: str):
-        super().__init__(message)
+    '''
+    raise when application execute has error.
+    '''
+    pass

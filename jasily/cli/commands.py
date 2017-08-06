@@ -17,7 +17,7 @@ from ..exceptions import (
 )
 from ..convert import TypeConvertException
 
-from .exceptions import NameConflictException, ParameterException
+from .exceptions import ApplicationException, UserInputException
 from .typed import *
 from .descriptors import *
 from .args import Arguments, ArgumentValue
@@ -113,7 +113,8 @@ class BaseCommand(Freezable):
         for name in cmd.enumerate_names():
             cc = self._subcmds_map.get(name)
             if cc != None and cc != cmd:
-                raise NameConflictException(name, "'{name}' is already exists.")
+                msg = "'{name}' is already exists.".format(name=name)
+                raise ApplicationException(msg)
             self._subcmds_map[name] = cmd
         self._subcmds.append(cmd)
 
@@ -253,7 +254,7 @@ class CallableCommand(ExecuteableCommand):
         # resolve parameters
         try:
             args, kwargs = self.resolve_parameter(s)
-        except ParameterException:
+        except UserInputException:
             raise
 
         # invoke
@@ -273,7 +274,7 @@ class CallableCommand(ExecuteableCommand):
         try:
             rargs = s.args.to_args()
         except ArgumentValueException as err:
-            raise ParameterException(str(err))
+            raise UserInputException(str(err))
         sargs = list(rargs)
         resolving = [x for x in resolving if x.accept_value()]
         for r in resolving:
@@ -294,10 +295,10 @@ class CallableCommand(ExecuteableCommand):
         # check all
         if len(sargs) > 0:
             argsstr = ', '.join([str(x) for x in sargs])
-            raise ParameterException('unknown arguments: <%s>' % argsstr)
+            raise UserInputException('unknown arguments: <%s>' % argsstr)
         for r in resolvers:
             if not r.is_resolved():
-                raise ParameterException('parameter {name} is NOT resolved.', name=r.parameter.name)
+                raise UserInputException('parameter {name} is NOT resolved.'.format(name=r.parameter.name))
         # end
         args = []
         kwargs = {}
@@ -388,7 +389,8 @@ class KeywordParameterResolver(ParameterResolver):
         except TypeConvertException as err:
             msg = 'cannot convert <"{value}"> to type <{type}>.'
             raw = arg.value(self._session.engine.converter, str)
-            raise ParameterException(msg, value=raw, type=self._parameter.annotation.__name__)
+            msg = msg.format(value=raw, type=self._parameter.annotation.__name__)
+            raise UserInputException(msg)
         if self._is_list:
             if self._value is Parameter.empty:
                 self._value = []
@@ -401,7 +403,7 @@ class KeywordParameterResolver(ParameterResolver):
         if arg.name != self._parameter.name:
             return False
         if not self._is_list and self._value != Parameter.empty:
-            raise ParameterException('conflict arguments: <{name}>', name=arg.name)
+            raise UserInputException('conflict arguments: <{name}>'.format(name=arg.name))
         return self.__resolve_by_value(arg)
 
     def resolve_by_value(self, arg: ArgumentValue):
@@ -457,7 +459,7 @@ class VarKeywordParameterResolver(_VarParameterResolver):
         if arg.name != None or arg.name != self.parameter.name:
             return False
         if arg.name in self._args:
-            raise ParameterException('conflict arguments: <{name}>', name=arg.name)
+            raise UserInputException('conflict arguments: <{name}>'.format(name=arg.name))
         self._args[arg.name] = arg.value(self._session.engine.converter, str)
         return True
 

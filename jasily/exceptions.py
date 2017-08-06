@@ -6,6 +6,7 @@
 # build-in Exceptions
 # ----------
 
+from inspect import Parameter
 from .utils import jrepr
 
 
@@ -44,8 +45,16 @@ class MessageException(JasilyBaseException):
 
 class ArgumentException(MessageException):
     '''a Exception for argument error.'''
-    def __init__(self, name: str, message: str, *args, **kwargs):
+    def __init__(self, message: str, parameter: (Parameter, str)=None, *args, **kwargs):
         super().__init__(message, *args, **kwargs)
+        if parameter is None:
+            name = '?'
+        elif isinstance(parameter, Parameter):
+            name = parameter.name
+        elif isinstance(parameter, str):
+            name = parameter
+        else:
+            raise NotImplementedError
         self._name = name
         self.kwargs['name'] = name
         self.kwargs['parameter_name'] = name
@@ -71,8 +80,7 @@ class ArgumentNoneException(ArgumentValueException):
 
 
 class ArgumentTypeException(ArgumentException):
-    def __init__(self, except_type, actual_value,
-                 *args, **kwargs):
+    def __init__(self, except_type, actual_value, *args, **kwargs):
         if not isinstance(except_type, type):
             raise ArgumentTypeException(type, except_type)
         actual_type = "'None'" if actual_value is None else type(actual_value).__name__
@@ -81,7 +89,7 @@ class ArgumentTypeException(ArgumentException):
         fmtext = 'param <{name}> value type error:' +\
                  ' (expected <{except_type}>, got <{actual_type}>)'
         super().__init__(fmtext,
-                         parameter_name=kwargs.get('name', '?'),
+                         parameter=kwargs.get('name', '?'),
                          except_type=except_type.__name__,
                          actual_type=actual_type,
                          *args, **kwargs)
