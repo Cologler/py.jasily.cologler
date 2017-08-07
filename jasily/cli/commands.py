@@ -408,10 +408,16 @@ class KeywordParameterResolver(ParameterResolver):
         return True
 
     def resolve_by_name(self, arg: ArgumentValue):
-        if arg.name != self._parameter.name:
+        if arg.name != self.parameter.name:
             return False
         if not self._is_list and self._value != Parameter.empty:
-            raise UserInputException('conflict arguments: <{name}>'.format(name=arg.name))
+            # already has value
+            raise UserInputException('Conflict arguments: <{}>'.format(arg.name))
+        if not arg.has_value:
+            if self.parameter.annotation != bool:
+                msg = ['Unkown arguments: <{}>'.format(arg.name)]
+                msg.append('   Hint: you may try to use `--{0}` instead `-{0}`'.format(arg.name))
+                raise UserInputException('\n'.join(msg))
         return self.__resolve_by_value(arg)
 
     def resolve_by_value(self, arg: ArgumentValue):

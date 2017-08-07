@@ -8,7 +8,7 @@
 
 from . import check_arguments
 from .g import global_type
-from .exceptions import JasilyBaseException, ArgumentTypeException
+from .exceptions import BaseException, ArgumentTypeException
 from .objects import UInt
 
 
@@ -89,7 +89,7 @@ class StringConverter(Converter):
         raise ConvertError
 
 
-class TypeNotSupportException(JasilyBaseException):
+class TypeNotSupportException(BaseException):
     def __init__(self, from_type, except_type,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -102,7 +102,7 @@ class TypeNotSupportException(JasilyBaseException):
         return 'currently is not support convert from %s to %s' % (f, t)
 
 
-class TypeConvertException(JasilyBaseException):
+class TypeConvertException(BaseException):
     def __init__(self, value, except_type,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)

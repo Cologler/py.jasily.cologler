@@ -139,6 +139,10 @@ class ArgumentValue:
     def name(self):
         return self._name
 
+    @property
+    def has_value(self):
+        return self._value != None
+
     def value(self, converter, annotation):
         if annotation is Parameter.empty:
             return self._value
