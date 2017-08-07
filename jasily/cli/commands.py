@@ -39,6 +39,10 @@ class Session(ISession, Freezable):
         self._state = state
         self._instance = None
         self._cmdchain = []
+        self._auto_resolve_map = {
+            IEngine: engine,
+            ISession: self
+        }
 
     @property
     def state(self):
@@ -72,6 +76,11 @@ class Session(ISession, Freezable):
     def usage(self):
         strings = CommandUsageFormater(self).strings()
         print('\n'.join(strings))
+
+    @property
+    def auto_resolve_map(self):
+        return self._auto_resolve_map
+
 
 
 class BaseCommand(Freezable):
@@ -267,9 +276,8 @@ class CallableCommand(ExecuteableCommand):
 
         # resolve known type
         resolving = [x for x in resolvers if type(x) is KeywordParameterResolver and x.accept_value()]
-        mt = maptype(s)
         for r in resolving:
-            r.resolve_by_type(mt)
+            r.resolve_by_type(s.auto_resolve_map)
         # resolve KeywordParameterResolver by name
         try:
             rargs = s.args.to_args()
@@ -491,6 +499,9 @@ class CommandUsageFormater:
         self._indent_unit = 3
 
     def _parse_parameter(self, p: Parameter):
+        if p.annotation in self._session.auto_resolve_map:
+            return
+
         if p.default is Parameter.empty:
             name = p.name.upper()
         else:
@@ -569,7 +580,7 @@ class CommandUsageFormater:
             parts = []
             for p in cmd.parameters():
                 parts.append(self._parse_parameter(p))
-            docs.append(self.indent(2) + ' '.join(parts))
+            docs.append(self.indent(2) + ' '.join([x for x in parts if x]))
         else:
             pass
         doc = cmd.doc

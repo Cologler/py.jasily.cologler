@@ -19,13 +19,6 @@ class ISession:
         raise NotImplementedError
 
 
-def maptype(s: ISession):
-    typedmap = {}
-    typedmap[IEngine] = s.engine
-    typedmap[ISession] = s
-    return typedmap
-
-
 class IFile(str):
     pass
 

@@ -38,3 +38,6 @@ class Counter():
     def __exit__(self, *args):
         self.decr()
         return False
+
+    def __int__(self):
+        return self.value
