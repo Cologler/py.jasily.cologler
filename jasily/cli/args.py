@@ -6,6 +6,8 @@
 #
 # ----------
 
+
+from enum import Enum
 from inspect import Parameter
 from ..exceptions import ApiNotSupportException, ArgumentValueException
 
@@ -118,6 +120,12 @@ class ArgumentParser:
             self.__resolve_argument()
         return tuple(self._result)
 
+class ArgumentKinds(Enum):
+    '''argument kinds.'''
+    NameValuePair = 0
+    NameOnly = 1
+    ValueOnly = 2
+
 
 class ArgumentValue:
     def __init__(self, index: int, name: str, value: str):
@@ -142,6 +150,16 @@ class ArgumentValue:
     @property
     def has_value(self):
         return self._value != None
+
+    @property
+    def kind(self) -> ArgumentKinds:
+        '''get argument kind.'''
+        if self._name is None:
+            return ArgumentKinds.ValueOnly
+        elif self._value is None:
+            return ArgumentKinds.NameOnly
+        else:
+            return ArgumentKinds.NameValuePair
 
     def value(self, converter, annotation):
         if annotation is Parameter.empty:

@@ -20,7 +20,7 @@ from ..convert import TypeConvertException
 from .exceptions import ApplicationException, UserInputException
 from .typed import *
 from .descriptors import *
-from .args import Arguments, ArgumentValue
+from .args import Arguments, ArgumentValue, ArgumentKinds
 
 try:
     import colorama
@@ -275,20 +275,20 @@ class CallableCommand(ExecuteableCommand):
         resolvers = tuple([create_resolver(s, i, p) for i, p in enumerate(self._parameters)])
 
         # resolve known type
-        resolving = [x for x in resolvers if type(x) is KeywordParameterResolver and x.accept_value()]
+        resolving = [x for x in resolvers if type(x) is KeywordParameterResolver and x.can_accept()]
         for r in resolving:
-            r.resolve_by_type(s.auto_resolve_map)
+            r.resolve_from(s)
         # resolve KeywordParameterResolver by name
         try:
             rargs = s.args.to_args()
         except ArgumentValueException as err:
             raise UserInputException(str(err))
         sargs = list(rargs)
-        resolving = [x for x in resolving if x.accept_value()]
+        resolving = [x for x in resolving if x.can_accept()]
         for r in resolving:
             sargs = [x for x in sargs if not r.resolve_by_name(x)]
         # resolve KeywordParameterResolver by value
-        resolving = [x for x in resolving if x.accept_value()]
+        resolving = [x for x in resolving if x.can_accept()]
         for r in resolving:
             sargs = [x for x in sargs if not r.resolve_by_value(x)]
         # resolve VarKeywordParameterResolver
@@ -342,13 +342,14 @@ class ParameterResolver:
     def parameter(self):
         return self._parameter
 
-    def accept_value(self):
+    def can_accept(self):
         raise NotImplementedError
 
     def is_resolved(self):
         raise NotImplementedError
 
-    def resolve_by_type(self, m: dict):
+    def resolve_from(self, source: Session):
+        '''resolve parameter value from session.'''
         return False
 
     def resolve_by_name(self, arg: ArgumentValue):
@@ -375,19 +376,16 @@ class KeywordParameterResolver(ParameterResolver):
             if self._parameter.default != None:
                 self._targrt_type = type(self._parameter.default)
 
-    def accept_value(self):
-        if self._is_list:
-            return True
-        else:
-            return self._value is Parameter.empty
+    def can_accept(self):
+        return self._is_list or self._value is Parameter.empty
 
     def is_resolved(self):
         return self._value != Parameter.empty or self._parameter.default != Parameter.empty
 
-    def resolve_by_type(self, m: dict):
+    def resolve_from(self, source: Session):
         if self._parameter.annotation is Parameter.empty:
             return False
-        self._value = m.get(self._parameter.annotation, Parameter.empty)
+        self._value = source.auto_resolve_map.get(self._parameter.annotation, Parameter.empty)
         return self.is_resolved()
 
     def __resolve_by_value(self, arg: ArgumentValue):
@@ -399,13 +397,20 @@ class KeywordParameterResolver(ParameterResolver):
             raw = arg.value(self._session.engine.converter, str)
             msg = msg.format(value=raw, type=self._parameter.annotation.__name__)
             raise UserInputException(msg)
+        self.__set_value(value)
+        return True
+
+    def __set_value(self, value):
+        if self._parameter.annotation != None:
+            assert isinstance(value, self._parameter.annotation)
         if self._is_list:
             if self._value is Parameter.empty:
                 self._value = []
             self._value.append(value)
-        else:
+        elif self._value is Parameter.empty:
             self._value = value
-        return True
+        else:
+            raise NotImplementedError
 
     def resolve_by_name(self, arg: ArgumentValue):
         if arg.name != self.parameter.name:
@@ -413,12 +418,15 @@ class KeywordParameterResolver(ParameterResolver):
         if not self._is_list and self._value != Parameter.empty:
             # already has value
             raise UserInputException('Conflict arguments: <{}>'.format(arg.name))
-        if not arg.has_value:
+        if arg.kind == ArgumentKinds.NameOnly:
             if self.parameter.annotation != bool:
                 msg = ['Unkown arguments: <{}>'.format(arg.name)]
                 msg.append('   Hint: you may try to use `--{0}` instead `-{0}`'.format(arg.name))
                 raise UserInputException('\n'.join(msg))
-        return self.__resolve_by_value(arg)
+            else:
+                self.__set_value(True)
+        else:
+            return self.__resolve_by_value(arg)
 
     def resolve_by_value(self, arg: ArgumentValue):
         if arg.name != None:
@@ -441,7 +449,7 @@ class _VarParameterResolver(ParameterResolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def accept_value(self):
+    def can_accept(self):
         return True
 
     def is_resolved(self):
