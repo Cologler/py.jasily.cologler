@@ -9,7 +9,7 @@
 import os
 from setuptools import setup, find_packages
 
-VERSION = '0.1.2.4'
+VERSION = '0.1.2.5'
 DESCRIPTION = ''
 
 long_description = None
