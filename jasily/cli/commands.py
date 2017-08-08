@@ -401,7 +401,7 @@ class KeywordParameterResolver(ParameterResolver):
         return True
 
     def __set_value(self, value):
-        if self._parameter.annotation != None:
+        if self._parameter.annotation != Parameter.empty:
             assert isinstance(value, self._parameter.annotation)
         if self._is_list:
             if self._value is Parameter.empty:
