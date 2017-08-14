@@ -113,7 +113,7 @@ class Engine(IEngine):
     def converter(self):
         return self._converter
 
-    def execute(self, argv, keep_error=False, state=None):
+    def _prepare_argv(self, argv):
         if argv is None:
             raise ValueError
         if isinstance(argv, tuple):
@@ -127,6 +127,16 @@ class Engine(IEngine):
             argv.append(sys.argv[0])
         elif argv[0] != sys.argv[0]:
             argv.insert(0, sys.argv[0])
+
+        return argv
+
+    def usage(self):
+        argv = self._prepare_argv([])
+        s = Session(self, argv, None)
+        s.usage()
+
+    def execute(self, argv, keep_error=False, state=None):
+        argv = self._prepare_argv(argv)
 
         def print_error(msg):
             colorama = None

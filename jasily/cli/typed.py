@@ -16,6 +16,16 @@ class IEngine:
 class ISession:
     @property
     def engine(self) -> IEngine:
+        '''get engine instance.'''
+        raise NotImplementedError
+
+    def usage(self):
+        '''print usage.'''
+        raise NotImplementedError
+
+    @property
+    def state(self):
+        '''get session state.'''
         raise NotImplementedError
 
 
