@@ -15,7 +15,7 @@ def ensure_case(args):
 # idea from https://code.activestate.com/recipes/410692/
 class switch(object):
     """
-    to use `switch`, here are examples:
+    to use `switch`, here are some examples:
 
     **example 1:**
 

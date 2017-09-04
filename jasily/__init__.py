@@ -9,10 +9,13 @@
 import os
 
 from .exceptions import InvalidOperationException
-from .lang import switch
 from .check import (
     check_arguments,
     check_return
+)
+from .lang import (
+    prop,
+    switch
 )
 
 def pip_require(module_name, pip_name=None):
@@ -22,5 +25,3 @@ def pip_require(module_name, pip_name=None):
     except ImportError:
         if os.system('pip install ' + pip_name or module_name) != 0:
             raise ImportError('can not found module call ' + module_name)
-
-
