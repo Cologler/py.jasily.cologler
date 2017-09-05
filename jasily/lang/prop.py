@@ -40,20 +40,28 @@ def prop(*args, **kwargs):
     def value(self): pass
 
     # mode 2
-    @prop(field='_value', get=True, set=True)
+    @prop(field='_value', get=True, set=True, [default=None])
     def value(self): pass
     ```
     '''
     def wrap(func):
+        '''NO DOC.'''
         if not callable(func):
             raise ValueError
         key = kwargs.get('field', '_' + func.__name__)
+        has_default = 'default' in kwargs
+        default = kwargs.get('default', None)
         def getter(self):
-            try:
-                return self.__dict__[key]
-            except KeyError:
-                object_has_no_attr(type(self), key)
+            '''NO DOC.'''
+            if has_default:
+                return self.__dict__.get(key, default)
+            else:
+                try:
+                    return self.__dict__[key]
+                except KeyError:
+                    object_has_no_attr(type(self), key)
         def setter(self, val):
+            '''NO DOC.'''
             self.__dict__[key] = val
         fget = getter if kwargs.get('get', True) else None
         fset = setter if kwargs.get('set', True) else None
