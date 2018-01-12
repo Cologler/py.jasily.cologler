@@ -8,14 +8,10 @@
 
 import os
 
-from .path import (
-    FileSystem,
-    Directory,
-    format_size,
-    File,
-    Path
+from .fs import (
+    format_size
 )
 
 __all__ = [
-    'FileSystem', 'Directory', 'File', 'Path', 'format_size',
+    'format_size',
 ]
