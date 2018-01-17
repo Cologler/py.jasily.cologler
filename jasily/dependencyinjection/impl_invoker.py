@@ -9,7 +9,7 @@
 from inspect import Parameter, isfunction, signature
 from typing import List
 
-from ..check import check_arguments, check_callable, check_type
+from ..check import check_arguments
 from ..objects import NOT_FOUND
 from .errors import TypeNotFoundError
 
@@ -50,18 +50,22 @@ class CallableValueFactory(IValueFactory):
     def __init__(self, func: callable, return_value, invoker: IFunctionInvoker):
         super().__init__()
 
-        check_callable(func)
+        if not callable(func):
+            raise TypeError
+
         self._func = func
         self._signature = signature(func)
 
         self._type = return_value
         if self._type is None and self._signature.return_annotation != Parameter.empty:
             self._type = self._signature.return_annotation
-        check_type(self._type, type)
+        if not isinstance(self._type, type):
+            raise TypeError
 
         self._invoker = invoker
         if self._invoker != None:
-            check_type(self._invoker, IFunctionInvoker)
+            if not isinstance(self._invoker, IFunctionInvoker):
+                raise TypeError
 
     def __str__(self):
         if isinstance(self._func, type):
