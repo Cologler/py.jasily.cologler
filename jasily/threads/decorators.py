@@ -9,8 +9,8 @@
 import functools
 import threading
 
-def _create_wrapper(func, factory, factory_args=[], factory_kwargs={}):
-    sync = factory(*factory_args, **factory_kwargs)
+def _create_wrapper(func, factory):
+    sync = factory()
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -58,9 +58,10 @@ def semaphore(count: int, bounded: bool=False):
     '''
 
     lock_type = threading.BoundedSemaphore if bounded else threading.Semaphore
+    factory = functools.partial(lock_type, value=count)
 
     def _wrap(func):
-        return _create_wrapper(func, lock_type, factory_kwargs={'value': count})
+        return _create_wrapper(func, factory)
 
     return _wrap
 
