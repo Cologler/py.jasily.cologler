@@ -20,9 +20,7 @@ class TestArgumentTypeException(unittest.TestCase):
             ArgumentTypeException('str', 1)
 
     def test_tostr(self):
-        print()
-        print('show str(ArgumentTypeException):')
-        print('  ' + str(ArgumentTypeException(str, 1)))
+        pass
 
 
 def main(argv=None):
