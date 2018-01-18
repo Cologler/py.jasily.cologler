@@ -8,6 +8,9 @@
 
 from abc import abstractmethod
 from weakref import WeakKeyDictionary
+import threading
+
+from ..lang.ext_with import with_objattr
 
 NOVALUE = object()
 
@@ -73,5 +76,28 @@ class DictStore(IStore):
         if overwrite or obj not in self._data:
             self._data[obj] = value
 
+    def pop(self, descriptor, obj, *, defval=NOVALUE):
+        self._data.pop(obj, defval)
+
+
+class ConcurrentDictStore(DictStore):
+    def __init__(self, store_dict: dict=None):
+        super().__init__(store_dict)
+        self._lock = threading.RLock()
+
+    @with_objattr('_lock')
+    def has(self, descriptor, obj):
+        return obj in self._data
+
+    @with_objattr('_lock')
+    def get(self, descriptor, obj, *, defval=NOVALUE):
+        return self._data.get(obj, defval)
+
+    @with_objattr('_lock')
+    def set(self, descriptor, obj, value, *, overwrite=True):
+        if overwrite or obj not in self._data:
+            self._data[obj] = value
+
+    @with_objattr('_lock')
     def pop(self, descriptor, obj, *, defval=NOVALUE):
         self._data.pop(obj, defval)
