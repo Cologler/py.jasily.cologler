@@ -49,8 +49,10 @@ class FieldStore(IStore):
         return vars(obj).get(self._field, defval)
 
     def set(self, descriptor, obj, value, *, overwrite=True):
-        if overwrite or self._field not in vars(obj):
+        if overwrite:
             vars(obj)[self._field] = value
+        else:
+            vars(obj).setdefault(obj, value)
 
     def pop(self, descriptor, obj, *, defval=NOVALUE):
         return vars(obj).pop(self._field, defval)
@@ -73,8 +75,10 @@ class DictStore(IStore):
         return self._data.get(obj, defval)
 
     def set(self, descriptor, obj, value, *, overwrite=True):
-        if overwrite or obj not in self._data:
+        if overwrite:
             self._data[obj] = value
+        else:
+            self._data.setdefault(obj, value)
 
     def pop(self, descriptor, obj, *, defval=NOVALUE):
         self._data.pop(obj, defval)
@@ -85,19 +89,7 @@ class ConcurrentDictStore(DictStore):
         super().__init__(store_dict)
         self._lock = threading.RLock()
 
-    @with_objattr('_lock')
-    def has(self, descriptor, obj):
-        return obj in self._data
-
-    @with_objattr('_lock')
-    def get(self, descriptor, obj, *, defval=NOVALUE):
-        return self._data.get(obj, defval)
-
-    @with_objattr('_lock')
-    def set(self, descriptor, obj, value, *, overwrite=True):
-        if overwrite or obj not in self._data:
-            self._data[obj] = value
-
-    @with_objattr('_lock')
-    def pop(self, descriptor, obj, *, defval=NOVALUE):
-        self._data.pop(obj, defval)
+for name in ('has', 'get', 'set', 'pop'):
+    func = vars(DictStore)[name]
+    newfunc = with_objattr('_lock')(func)
+    setattr(ConcurrentDictStore, name, newfunc)
