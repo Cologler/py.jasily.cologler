@@ -64,8 +64,7 @@ def cache(descriptor=None, *, store: IStore = None):
     cache_descriptor = CacheDescriptor()
 
     if store is None:
-        field = descriptor_name or cache_descriptor
-        store = FieldStore(field)
+        store = FieldStore(cache_descriptor)
     elif not isinstance(store, IStore):
         raise TypeError(f'store must be a {IStore}.')
 
