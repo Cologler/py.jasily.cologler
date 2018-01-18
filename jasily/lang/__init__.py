@@ -8,8 +8,10 @@
 
 from .prop import prop
 from .switch import switch
+from .ext_with import with_it, with_objattr, with_objattrs
 
 __all__ = [
     'prop',
-    'switch'
+    'switch',
+    'with_it', 'with_objattr', 'with_objattrs'
 ]
