@@ -37,7 +37,9 @@ class _CacheDescriptor(_Descriptor):
         self._store = store
 
     def __get__(self, obj, objtype):
-        value = self._store.get(self, obj, objtype, defval=NOVALUE)
+        if obj is None:
+            return super().__get__(obj, objtype)
+        value = self._store.get(self, obj, defval=NOVALUE)
         if value is NOVALUE:
             value = super().__get__(obj, objtype)
             self._store.set(self, obj, value)
@@ -61,7 +63,9 @@ class _CacheDataDescriptor(_DataDescriptor):
         self._store = store
 
     def __get__(self, obj, objtype):
-        value = self._store.get(self, obj, objtype, defval=NOVALUE)
+        if obj is None:
+            return super().__get__(obj, objtype)
+        value = self._store.get(self, obj, defval=NOVALUE)
         if value is NOVALUE:
             value = super().__get__(obj, objtype)
             self._store.set(self, obj, value)
