@@ -15,13 +15,19 @@ from jasily.data.prop import cache, getonly_property
 
 class Test(unittest.TestCase):
 
-    def test_getonly_property(self):
+    def test_getonly_property_example_1(self):
         class A:
             @getonly_property
             def name(self):
-                return 'name'
+                return 'x'
 
-        self.assertEqual(A().name, 'name')
+        a = A()
+        self.assertEqual(a.name, 'x')
+        a.name = '1'
+        self.assertEqual(a.name, '1')
+        del a.name
+        self.assertEqual(a.name, 'x')
+
 
     def test_getonly_property_attrs(self):
         class A:
@@ -43,6 +49,7 @@ class Test(unittest.TestCase):
             def __init__(self):
                 self._inc_a = 0
                 self._inc_b = 0
+                self._inc_c = 0
 
             @cache
             @property
@@ -56,13 +63,19 @@ class Test(unittest.TestCase):
                 self._inc_b += 1
                 return self._inc_b
 
+            @cache
+            @getonly_property
+            def c(self):
+                self._inc_c += 1
+                return self._inc_c
+
         ins = A()
         self.assertEqual(1, ins.a)
         self.assertEqual(1, ins.a)
-        self.assertEqual(1, ins.a)
         self.assertEqual(1, ins.b)
         self.assertEqual(1, ins.b)
-        self.assertEqual(1, ins.b)
+        self.assertEqual(1, ins.c)
+        self.assertEqual(1, ins.c)
 
 
 def main(argv=None):

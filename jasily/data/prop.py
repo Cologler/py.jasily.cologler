@@ -18,58 +18,12 @@ def get_descriptor_name(descriptor):
     if isinstance(descriptor, getonly_property):
         return descriptor.fget.__name__
 
-class _Descriptor:
-
-    def __init__(self, base_descriptor):
-        self._base_descriptor = base_descriptor
-
-    def __get__(self, obj, objtype):
-        return self._base_descriptor.__get__(obj, objtype)
+    return getattr(descriptor, '__name__', None)
 
 
-class _CacheDescriptor(_Descriptor):
-    def __init__(self, base_descriptor, store):
-        super().__init__(base_descriptor)
-
-        if store is None:
-            field = get_descriptor_name(base_descriptor) or self
-            store = FieldStore(field)
-        self._store = store
-
-    def __get__(self, obj, objtype):
-        if obj is None:
-            return super().__get__(obj, objtype)
-        value = self._store.get(self, obj, defval=NOVALUE)
-        if value is NOVALUE:
-            value = super().__get__(obj, objtype)
-            self._store.set(self, obj, value)
-        return value
-
-
-class _DataDescriptor(_Descriptor):
-
-    def __set__(self, obj, value):
-        return self._base_descriptor.__set__(obj, value)
-
-
-class _CacheDataDescriptor(_DataDescriptor):
-
-    def __init__(self, base_descriptor, store):
-        super().__init__(base_descriptor)
-
-        if store is None:
-            field = get_descriptor_name(base_descriptor) or self
-            store = FieldStore(field)
-        self._store = store
-
-    def __get__(self, obj, objtype):
-        if obj is None:
-            return super().__get__(obj, objtype)
-        value = self._store.get(self, obj, defval=NOVALUE)
-        if value is NOVALUE:
-            value = super().__get__(obj, objtype)
-            self._store.set(self, obj, value)
-        return value
+class ICacheDescriptor:
+    '''the base type for `CacheDescriptor`.'''
+    pass
 
 
 def cache(descriptor=None, *, store: IStore = None):
@@ -85,22 +39,84 @@ def cache(descriptor=None, *, store: IStore = None):
 
     if descriptor is None:
         return functools.partial(cache, store=store)
-    if store is not None and not isinstance(store, IStore):
+
+    hasattrs = {
+        'get': hasattr(descriptor, '__get__'),
+        'set': hasattr(descriptor, '__set__'),
+        'del': hasattr(descriptor, '__delete__')
+    }
+
+    descriptor_name = get_descriptor_name(descriptor)
+
+    # pylint: disable=R0903,C0111
+    class CacheDescriptor(ICacheDescriptor):
+        def __init__(self):
+            if descriptor_name is not None:
+                self.__name__ = descriptor_name
+
+        def __getattr__(self, name):
+            print(name)
+            raise NotImplementedError
+
+        def __getattribute__(self, name):
+            raise NotImplementedError
+
+    cache_descriptor = CacheDescriptor()
+
+    if store is None:
+        field = descriptor_name or cache_descriptor
+        store = FieldStore(field)
+    elif not isinstance(store, IStore):
         raise TypeError(f'store must be a {IStore}.')
 
-    if not hasattr(descriptor, '__get__'):
-        raise TypeError(f'{descriptor} is not a descriptor.')
+    if hasattrs['get']:
+        def get(self, obj, objtype):
+            if obj is None:
+                return descriptor.__get__(obj, objtype)
+            value = store.get(self, obj, defval=NOVALUE)
+            if value is NOVALUE:
+                value = descriptor.__get__(obj, objtype)
+                store.set(self, obj, value)
+            return value
 
-    if hasattr(descriptor, '__set__'):
-        return _CacheDataDescriptor(descriptor, store=store)
-    else:
-        return _CacheDescriptor(descriptor, store=store)
+        CacheDescriptor.__get__ = get
+
+    if hasattrs['set']:
+        def set(self, obj, value):
+            store.pop(self, obj)
+            descriptor.__set__(obj, value)
+
+        CacheDescriptor.__set__ = set
+
+    if hasattrs['del']:
+        def delete(self, obj):
+            store.pop(self, obj)
+            descriptor.__delete__(obj)
+
+        CacheDescriptor.__delete__ = delete
+
+    return cache_descriptor
 
 
 class getonly_property:
     '''
     a getonly property just like `property`.
     but, this is **NOT** a data descriptor.
+
+    usage:
+
+    ``` py
+    # example 1: use as default value.
+    class A:
+        @getonly_property
+        def name(self):
+            return 'x'
+    a = A()
+    a.name         # a.name == 'x'
+    a.name = '1'   # a.name == '1'
+    del a.name     # a.name == 'x'
+    ```
+
     '''
 
     def __init__(self, fget, doc=None):
