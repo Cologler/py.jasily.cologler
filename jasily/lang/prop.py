@@ -6,7 +6,6 @@
 #
 # ----------
 
-from .stdlib_errors import object_has_no_attr
 
 '''
 `prop` is a sugar for `property`.
@@ -59,7 +58,7 @@ def prop(*args, **kwargs):
                 try:
                     return self.__dict__[key]
                 except KeyError:
-                    object_has_no_attr(type(self), key)
+                    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{key}'")
         def setter(self, val):
             '''NO DOC.'''
             self.__dict__[key] = val
