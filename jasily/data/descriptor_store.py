@@ -53,10 +53,15 @@ class FieldStore(IStore):
         return vars(obj).pop(self._field, defval)
 
 
-class WeakMapStore(IStore):
+class DictStore(IStore):
 
-    def __init__(self):
-        self._data = WeakKeyDictionary()
+    def __init__(self, store_dict: dict=None):
+        '''
+        if `store_dict` is `None`, use default dict: `WeakKeyDictionary`.
+        '''
+        if store_dict is None:
+            store_dict = WeakKeyDictionary()
+        self._data = store_dict
 
     def has(self, descriptor, obj):
         return obj in self._data
