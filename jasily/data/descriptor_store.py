@@ -27,13 +27,18 @@ class IStore:
         raise NotImplementedError
 
     @abstractmethod
-    def set(self, descriptor, obj, value, *, overwrite=True):
+    def pop(self, descriptor, obj, *, defval=NOVALUE) -> object:
+        '''get and remove value.'''
+        raise NotImplementedError
+
+    @abstractmethod
+    def set(self, descriptor, obj, value):
         '''set value.'''
         raise NotImplementedError
 
     @abstractmethod
-    def pop(self, descriptor, obj, *, defval=NOVALUE) -> object:
-        '''get and remove value.'''
+    def add(self, descriptor, obj, value):
+        '''add value if does not exists.'''
         raise NotImplementedError
 
 
@@ -48,14 +53,14 @@ class FieldStore(IStore):
     def get(self, descriptor, obj, *, defval=NOVALUE):
         return vars(obj).get(self._field, defval)
 
-    def set(self, descriptor, obj, value, *, overwrite=True):
-        if overwrite:
-            vars(obj)[self._field] = value
-        else:
-            vars(obj).setdefault(obj, value)
-
     def pop(self, descriptor, obj, *, defval=NOVALUE):
         return vars(obj).pop(self._field, defval)
+
+    def set(self, descriptor, obj, value):
+        vars(obj)[self._field] = value
+
+    def add(self, descriptor, obj, value):
+        vars(obj).setdefault(obj, value)
 
 
 class DictStore(IStore):
@@ -74,11 +79,11 @@ class DictStore(IStore):
     def get(self, descriptor, obj, *, defval=NOVALUE):
         return self._data.get(obj, defval)
 
-    def set(self, descriptor, obj, value, *, overwrite=True):
-        if overwrite:
-            self._data[obj] = value
-        else:
-            self._data.setdefault(obj, value)
+    def set(self, descriptor, obj, value):
+        self._data[obj] = value
+
+    def add(self, descriptor, obj, value):
+        self._data.setdefault(obj, value)
 
     def pop(self, descriptor, obj, *, defval=NOVALUE):
         self._data.pop(obj, defval)
