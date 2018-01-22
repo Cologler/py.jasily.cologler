@@ -9,15 +9,8 @@
 import functools
 import threading
 
-def _create_wrapper(func, factory):
-    sync = factory()
+from ..lang import with_it
 
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        with sync:
-            return func(*args, **kwargs)
-
-    return wrapper
 
 def lock(func):
     '''
@@ -30,7 +23,9 @@ def lock(func):
     def func(): pass
     ```
     '''
-    return _create_wrapper(func, threading.Lock)
+
+    return with_it(threading.Lock())(func)
+
 
 def rlock(func):
     '''
@@ -43,7 +38,9 @@ def rlock(func):
     def func(): pass
     ```
     '''
-    return _create_wrapper(func, threading.RLock)
+
+    return with_it(threading.RLock())(func)
+
 
 def semaphore(count: int, bounded: bool=False):
     '''
@@ -58,11 +55,6 @@ def semaphore(count: int, bounded: bool=False):
     '''
 
     lock_type = threading.BoundedSemaphore if bounded else threading.Semaphore
-    factory = functools.partial(lock_type, value=count)
+    lock_obj = lock_type(value=count)
 
-    def _wrap(func):
-        return _create_wrapper(func, factory)
-
-    return _wrap
-
-
+    return with_it(lock_obj)

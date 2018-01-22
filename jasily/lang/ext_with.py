@@ -12,6 +12,13 @@ import functools
 def with_it(obj):
     '''
     wrap `with obj` out of func.
+
+    example:
+
+    ``` py
+    @with_it(Lock())
+    def func(): pass
+    ```
     '''
 
     def _wrap(func):
