@@ -11,10 +11,34 @@ import sys
 import traceback
 import unittest
 
-from jasily.lang.proxy import readonly
+from jasily.lang.proxy import mutable, readonly
 
 
 class Test(unittest.TestCase):
+    def test_mutable(self):
+        class A:
+            pass
+
+        a = A()
+        ap = mutable(a)
+
+        self.assertIsInstance(ap, type(a))
+
+        with self.assertRaises(AttributeError):
+            _ = ap.a
+        ap.a = 1
+        self.assertEqual(1, ap.a)
+        with self.assertRaises(AttributeError):
+            _ = a.a
+
+        a.a = 2
+        self.assertEqual(2, a.a)
+        self.assertEqual(1, ap.a)
+        del ap.a
+        self.assertEqual(2, ap.a)
+        with self.assertRaises(AttributeError):
+            del ap.a
+
     def test_readonly(self):
         class A:
             pass
