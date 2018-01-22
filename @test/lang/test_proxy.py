@@ -11,7 +11,7 @@ import sys
 import traceback
 import unittest
 
-from jasily.lang.readonlys import readonly
+from jasily.lang.proxy import readonly
 
 
 class Test(unittest.TestCase):

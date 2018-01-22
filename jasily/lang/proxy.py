@@ -10,7 +10,9 @@ from functools import update_wrapper
 
 def readonly(obj, *, error_on_set = False):
     '''
-    return readonly proxy for the `obj`.
+    return a readonly proxy for the `obj`.
+
+    all modify on the proxy will not apply on origin object.
     '''
     base_cls = type(obj)
 
