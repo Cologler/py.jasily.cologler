@@ -54,13 +54,6 @@ def cache(descriptor=None, *, store: IStore = None):
             if descriptor_name is not None:
                 self.__name__ = descriptor_name
 
-        def __getattr__(self, name):
-            print(name)
-            raise NotImplementedError
-
-        def __getattribute__(self, name):
-            raise NotImplementedError
-
     cache_descriptor = CacheDescriptor()
 
     if store is None:
