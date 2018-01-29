@@ -9,31 +9,32 @@
 import os
 from setuptools import setup, find_packages
 
-VERSION = '0.1.2.7'
-DESCRIPTION = ''
+long_description = ''
 
-long_description = None
+if os.path.isfile('__pypit_desc__.rst'):
+    with open('__pypit_desc__.rst') as fp:
+        long_description = fp.read()
 
-if os.path.isfile('README.md'):
-    with open('README.md') as f:
-        long_description = f.read()
-
-long_description = long_description or DESCRIPTION
+long_description = long_description or ''
 
 setup(
-    name = 'jasily',
-    version = VERSION,
-    description = DESCRIPTION,
-    long_description = long_description or DESCRIPTION,
-    classifiers = [],
-    keywords = 'python',
-    author = 'cologler',
+    long_description=long_description,
+    packages=find_packages(),
+    # auto generated:
+    name='jasily',
+    version='0.1.3.1',
+    description='',
+    keywords=[],
+    author='cologler',
     author_email='skyoflw@gmail.com',
-    url = 'https://github.com/Jasily/jasily-python',
-    license = 'MIT',
-    packages = find_packages(),
-    include_package_data = True,
-    zip_safe = True,
-    install_requires = [],
-    entry_points = {},
+    url='https://github.com/Jasily/jasily-python',
+    license='MIT License',
+    classifiers=[],
+    scripts=[],
+    entry_points={},
+    zip_safe=False,
+    include_package_data=True,
+    setup_requires=[],
+    install_requires=[],
+    tests_require=[],
 )

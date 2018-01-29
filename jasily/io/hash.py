@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2016 - cologler <skyoflw@gmail.com>
 # ----------
-# 
+#
 # ----------
 
 # crc32
@@ -57,16 +57,20 @@ class HashAlgorithm:
         ''' convert value to upper string. '''
         return ("%08x" % value).upper()
 
-    def calc_file(self, path):
-        '''a func to calc with a file hash sum.'''
-        with open(path, 'rb') as stream:
-            value = self.init_value()
-            while True:
-                buffer = stream.read(1024 * 64)
-                if len(buffer) == 0:
-                    break
-                value = self.next_value(buffer, value)
-            return self.to_string(value)
+    def compute_file(self, path):
+        '''compute hash for file.'''
+        with open(path, 'rb') as fp:
+            return self.compute_io(fp)
+
+    def compute_io(self, io_obj):
+        '''compute hash for io object.'''
+        value = self.init_value()
+        while True:
+            buffer = io_obj.read(1024 * 64)
+            if not buffer:
+                break
+            value = self.next_value(buffer, value)
+        return self.to_string(value)
 
     @classmethod
     def create(cls, name):
@@ -80,7 +84,7 @@ class HashAlgorithm:
         alg = __HashlibHashAlgorithm.try_create(name)
         if not alg is None:
             return alg
-        raise NotImplementedError        
+        raise NotImplementedError
 
 class Crc32Algorithm(HashAlgorithm):
     def __init__(self):
