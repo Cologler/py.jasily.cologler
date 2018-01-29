@@ -22,7 +22,7 @@ class HashCalculator:
         self._algorithms[algorithm.name] = algorithm
 
     def execute(self):
-        if len(self._algorithms) == 0:
+        if not self._algorithms:
             return
         for name in self._algorithms:
             self._value[name] = self._algorithms[name].init_value()
@@ -60,13 +60,13 @@ class HashAlgorithm:
     def compute_file(self, path):
         '''compute hash for file.'''
         with open(path, 'rb') as fp:
-            return self.compute_io(fp)
+            return self.compute_stream(fp)
 
-    def compute_io(self, io_obj):
+    def compute_stream(self, stream):
         '''compute hash for io object.'''
         value = self.init_value()
         while True:
-            buffer = io_obj.read(1024 * 64)
+            buffer = stream.read(1024 * 64)
             if not buffer:
                 break
             value = self.next_value(buffer, value)
