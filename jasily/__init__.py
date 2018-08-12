@@ -9,10 +9,6 @@
 import os
 
 from .exceptions import InvalidOperationException
-from .check import (
-    check_arguments,
-    check_return
-)
 from .lang import (
     prop,
     switch

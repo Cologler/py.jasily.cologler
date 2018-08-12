@@ -6,7 +6,6 @@
 # jasily base.
 # ----------
 
-from . import check_arguments
 from .g import global_type
 from .exceptions import BaseException, ArgumentTypeException
 from .objects import UInt
@@ -51,7 +50,6 @@ class Converter:
         return str(value)
 
     @classmethod
-    @check_arguments
     def from_type(cls, source_type: type):
         '''
         [Thread-Safely]

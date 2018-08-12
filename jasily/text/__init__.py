@@ -11,7 +11,7 @@ from contextlib import contextmanager
 
 class ContextOfTextWrapper:
     def __init__(self, printer):
-        self._printer = printer        
+        self._printer = printer
     def __enter__(self):
         pass
     def __exit__(self, *args):
@@ -30,7 +30,7 @@ class TextPrinter:
 
     def __enter__(self):
         return self
-        
+
     def __exit__(self, *args):
         pass
 
