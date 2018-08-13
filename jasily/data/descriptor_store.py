@@ -10,7 +10,7 @@ from abc import abstractmethod
 from weakref import WeakKeyDictionary
 import threading
 
-from ..lang.ext_with import with_objattr
+from ..lang import with_objattr
 
 NOVALUE = object()
 
