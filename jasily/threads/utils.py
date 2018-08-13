@@ -8,28 +8,36 @@
 
 import threading
 
-class Counter():
-    '''thread safety counter.'''
+from ..lang import with_objattr
 
-    def __init__(self, init_value=0):
+class SyncedBox:
+    def __init__(self, init_value):
+        self._value = init_value
         self._lock = threading.Lock()
-        self._counter = init_value
 
-    def incr(self, value=1):
-        '''return new value.'''
-        with self._lock:
-            self._counter += value
-            return self._counter
-
-    def decr(self, value=1):
-        '''return new value.'''
-        with self._lock:
-            self._counter -= value
-            return self._counter
+    @with_objattr('_lock')
+    def do(self, func):
+        self._value = func(self._value)
+        return self._value
 
     @property
     def value(self):
-        return self._counter
+        return self._value
+
+
+class Counter(SyncedBox):
+    '''thread safety counter.'''
+
+    def __init__(self, init_value=0):
+        super().__init__(init_value)
+
+    def incr(self, value=1):
+        '''return new value.'''
+        return self.do(lambda x: x + value)
+
+    def decr(self, value=1):
+        '''return new value.'''
+        return self.do(lambda x: x - value)
 
     def __enter__(self):
         self.incr()
