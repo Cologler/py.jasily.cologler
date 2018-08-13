@@ -29,6 +29,8 @@ def value(self, val):
 ```
 '''
 
+from ..data.box import Box
+
 def prop(*args, **kwargs):
     '''
     `prop` is a sugar for `property`.
@@ -44,30 +46,31 @@ def prop(*args, **kwargs):
     ```
     '''
     def wrap(func):
-        '''NO DOC.'''
         if not callable(func):
-            raise ValueError
+            raise TypeError
+
         key = kwargs.get('field', '_' + func.__name__)
-        has_default = 'default' in kwargs
-        default = kwargs.get('default', None)
-        def getter(self):
-            '''NO DOC.'''
-            if has_default:
-                return self.__dict__.get(key, default)
-            else:
+
+        default = Box()
+        default.load_from_dict(kwargs, 'default')
+
+        fget, fset, fdel = None, None, None
+
+        if kwargs.get('get', True):
+            def getter(self):
                 try:
                     return self.__dict__[key]
                 except KeyError:
+                    if default.has_value:
+                        return default.value
                     raise AttributeError(f"'{type(self).__name__}' object has no attribute '{key}'")
-        def setter(self, val):
-            '''NO DOC.'''
-            self.__dict__[key] = val
-        fget = getter if kwargs.get('get', True) else None
-        fset = setter if kwargs.get('set', True) else None
-        p = property(fget, fset, None, func.__doc__)
-        return p
+            fget = getter
 
-    if kwargs:
-        return wrap
-    else:
-        return wrap(args[0])
+        if kwargs.get('set', True):
+            def setter(self, val):
+                self.__dict__[key] = val
+            fset = setter
+
+        return property(fget, fset, fdel, func.__doc__)
+
+    return wrap if kwargs else wrap(args[0])
