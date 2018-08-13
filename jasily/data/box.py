@@ -19,6 +19,15 @@ class Box:
     def value(self):
         return self._value
 
+    @value.setter
+    def value(self, new_val):
+        self._value = new_val
+        self._has_value = True
+
+    def reset(self):
+        self._has_value = False
+        self._value = None
+
     def get(self, default):
         if self._has_value:
             return self._value

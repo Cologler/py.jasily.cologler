@@ -37,11 +37,17 @@ def prop(*args, **kwargs):
 
     ``` py
     # mode 1
-    @prop
+    @prop # equal `@prop(field='_value', get=True, set=True)`
     def value(self): pass
 
-    # mode 2
-    @prop(field='_value', get=True, set=True, [default=None])
+    # full kwargs
+    @prop(field: str = '_value',
+          get: bool = True,
+          set: bool = True,
+          del_: bool = False,
+          default: any = AttributeError,
+          types: tuple = any, # use `isinstance()` to type checked.
+          )
     def value(self): pass
     ```
     '''
@@ -49,10 +55,13 @@ def prop(*args, **kwargs):
         if not callable(func):
             raise TypeError
 
-        key = kwargs.get('field', '_' + func.__name__)
+        prop_name = func.__name__
+        key = kwargs.get('field', '_' + prop_name)
 
         default = Box()
         default.load_from_dict(kwargs, 'default')
+        types = Box()
+        types.load_from_dict(kwargs, 'types')
 
         fget, fset, fdel = None, None, None
 
@@ -68,8 +77,20 @@ def prop(*args, **kwargs):
 
         if kwargs.get('set', True):
             def setter(self, val):
+                if types.has_value and not isinstance(val, types.value):
+                    if isinstance(types.value, tuple):
+                        types_name = tuple(x.__name__ for x in types.value)
+                    else:
+                        types_name = types.value.__name__
+                    raise TypeError(f'type of {type(self).__name__}.{prop_name} must be {types_name};'
+                                    f'got {type(val).__name__} instead')
                 self.__dict__[key] = val
             fset = setter
+
+        if kwargs.get('del_', False):
+            def delete(self):
+                del self.__dict__[key]
+            fdel = delete
 
         return property(fget, fset, fdel, func.__doc__)
 

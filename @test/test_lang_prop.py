@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2018~2999 - Cologler <skyoflw@gmail.com>
+# ----------
+#
+# ----------
+
+import pytest
+
+from jasily.lang.prop import prop
+
+def test_prop_default():
+    class SomeClass:
+        @prop
+        def value(self):
+            pass
+
+    obj = SomeClass()
+    assert not hasattr(obj, '_value')
+    with pytest.raises(AttributeError):
+        val = obj.value
+    obj.value = 1
+    assert hasattr(obj, '_value')
+    assert obj.value == 1
+    assert getattr(obj, '_value') == 1
+
+def test_prop_all_feature():
+    class SomeClass:
+        @prop(field='_some_field', get=True, set=True, del_=True, default=3, types=(str, bytes))
+        def value(self):
+            pass
+
+    obj = SomeClass()
+    assert not hasattr(obj, '_some_field')
+    assert obj.value == 3
+
+    with pytest.raises(TypeError):
+        obj.value = 1
+    assert not hasattr(obj, '_some_field')
+    assert obj.value == 3
+
+    obj.value = '24'
+    assert getattr(obj, '_some_field') == '24'
+    assert obj.value == '24'
+
+    del obj.value
+    assert not hasattr(obj, '_some_field')
+    assert obj.value == 3
+    
