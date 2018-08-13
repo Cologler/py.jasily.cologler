@@ -18,7 +18,7 @@ def test_prop_default():
     obj = SomeClass()
     assert not hasattr(obj, '_value')
     with pytest.raises(AttributeError):
-        val = obj.value
+        _ = obj.value
     obj.value = 1
     assert hasattr(obj, '_value')
     assert obj.value == 1
@@ -46,4 +46,16 @@ def test_prop_all_feature():
     del obj.value
     assert not hasattr(obj, '_some_field')
     assert obj.value == 3
-    
+
+def test_field_name_equals_property_name():
+    class SomeClass:
+        @prop(field='value')
+        def value(self):
+            pass
+
+    obj = SomeClass()
+    with pytest.raises(AttributeError):
+        _ = obj.value
+
+    obj.value = 1
+    assert obj.value == 1
