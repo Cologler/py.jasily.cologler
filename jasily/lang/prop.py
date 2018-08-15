@@ -82,7 +82,7 @@ def prop(*args, **kwargs):
                         types_name = tuple(x.__name__ for x in types.value)
                     else:
                         types_name = types.value.__name__
-                    raise TypeError(f'type of {type(self).__name__}.{prop_name} must be {types_name};'
+                    raise TypeError(f'type of {type(self).__name__}.{prop_name} must be {types_name}; '
                                     f'got {type(val).__name__} instead')
                 self.__dict__[key] = val
             fset = setter
