@@ -71,6 +71,7 @@ def make_strongly_typed(cls: Type[T], d: dict) -> T:
 
     attr_dict = {}
     type_hints = get_type_hints(cls)
+    attr_dict['__slots__'] = tuple()
     for k, type_hint in type_hints.items():
         if isinstance(type_hint, type) and type_hint not in NOT_OBJECT_TYPES:
             fget = _create_fget_deep(cls, d, k, type_hint)
