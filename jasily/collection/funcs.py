@@ -6,6 +6,29 @@
 # ----------
 
 from functools import partial
+from typing import Callable, List, Any
+
+def call_each(funcs: List[Callable[[], Any]]):
+    '''
+    call each func from func list.
+
+    return the last func value or None if func list is empty.
+    '''
+    ret = None
+    for func in funcs:
+        ret = func()
+    return ret
+
+def call_each_reversed(funcs: List[Callable[[], Any]]):
+    '''
+    call each func from reversed func list.
+
+    return the last func value or None if func list is empty.
+    '''
+    ret = None
+    for func in reversed(funcs):
+        ret = func()
+    return ret
 
 class CallableList(list):
     '''
@@ -13,10 +36,7 @@ class CallableList(list):
     '''
 
     def __call__(self):
-        ret = None
-        for func in self:
-            ret = func()
-        return ret
+        return call_each(self)
 
     def append_func(self, func, *args, **kwargs):
         '''
