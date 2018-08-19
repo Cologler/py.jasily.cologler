@@ -8,12 +8,6 @@
 
 from .typed.ensures import *
 
-class __NotFound:
-    '''a object for not found value.'''
-    pass
-
-NOT_FOUND = __NotFound()
-
 
 class UInt:
     def __init__(self, value: int):
@@ -181,4 +175,3 @@ class Char:
             return int(self) == value
         else:
             return NotImplemented
-            
