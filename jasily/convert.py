@@ -8,7 +8,7 @@
 
 from .g import global_type
 from .exceptions import BaseException, ArgumentTypeException
-from .objects import UInt
+from .objects import uint
 
 
 class ConvertError(Exception):
@@ -160,8 +160,8 @@ class StringTypeConverter(TypeConverter):
     def __init__(self):
         super().__init__(str)
 
-    def to_uint(self, value: str) -> UInt:
-        return UInt(self.to_int(value))
+    def to_uint(self, value: str) -> uint:
+        return uint(self.to_int(value))
 
     def to_int(self, value: str) -> int:
         if '.' in value:

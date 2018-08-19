@@ -17,18 +17,18 @@ from jasily.objects import *
 class TestUInt(unittest.TestCase):
     def test_ctor(self):
         with self.assertRaises(ValueError):
-            UInt(-2)
+            uint(-2)
         with self.assertRaises(ValueError):
-            UInt(-1)
-        UInt(0)
-        UInt(1)
+            uint(-1)
+        uint(0)
+        uint(1)
 
     def test_eq(self):
-        value = UInt(3)
+        value = uint(3)
         self.assertEqual(3, value)
 
     def test_int(self):
-        value = int(UInt(3))
+        value = int(uint(3))
         self.assertIsInstance(value, int)
         self.assertEqual(3, value)
 

@@ -8,29 +8,15 @@
 
 from .typed.ensures import *
 
+class uint(int):
+    '''
+    the unsigned integer.
+    '''
 
-class UInt:
-    def __init__(self, value: int):
-        v = int(value)
-        if v < 0:
-            raise ValueError
-        self._value = v
-
-    def __int__(self):
-        return self._value
-
-    def __str__(self):
-        return str(self._value)
-
-    def __hash__(self):
-        return hash(self._value)
-
-    def __eq__(self, value):
-        return self._value == value
-
-    @property
-    def value(self):
-        return self._value
+    def __init__(self, *args, **kwargs):
+        super().__init__() # object.__init__() takes no arguments
+        if self < 0:
+            raise ValueError(f'uint cannot less then zero.')
 
 
 class IComparer:

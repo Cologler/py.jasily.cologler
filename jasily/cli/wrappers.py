@@ -6,7 +6,7 @@
 # wrap any obj as a command class.
 # ----------
 
-from ..objects import UInt
+from ..objects import uint
 
 
 class CommandObject:
@@ -21,7 +21,7 @@ class ValueCommandObject(CommandObject):
 
 
 class SubscriptableCommandObject(CommandObject):
-    def get(self, index: UInt):
+    def get(self, index: uint):
         '''get value from sequence by index.'''
         index = int(index)
         if index < len(self._data):
