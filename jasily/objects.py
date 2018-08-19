@@ -6,8 +6,6 @@
 # the missing
 # ----------
 
-from .typed.ensures import *
-
 class uint(int):
     '''
     the unsigned integer.
@@ -17,6 +15,7 @@ class uint(int):
         super().__init__() # object.__init__() takes no arguments
         if self < 0:
             raise ValueError(f'uint cannot less then zero.')
+UInt = uint
 
 
 class IComparer:

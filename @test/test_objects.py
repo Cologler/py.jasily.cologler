@@ -6,31 +6,22 @@
 #
 # ----------
 
-import os
 import sys
 import traceback
 import unittest
 
+from pytest import raises
+
+from jasily.objects import uint
 from jasily.objects import *
 
-
-class TestUInt(unittest.TestCase):
-    def test_ctor(self):
-        with self.assertRaises(ValueError):
-            uint(-2)
-        with self.assertRaises(ValueError):
-            uint(-1)
-        uint(0)
-        uint(1)
-
-    def test_eq(self):
-        value = uint(3)
-        self.assertEqual(3, value)
-
-    def test_int(self):
-        value = int(uint(3))
-        self.assertIsInstance(value, int)
-        self.assertEqual(3, value)
+def test_uint():
+    with raises(ValueError):
+        uint(-2)
+    with raises(ValueError):
+        uint(-1)
+    assert uint(0) == 0
+    assert uint(1) == 1
 
 
 class TestSet(unittest.TestCase):
