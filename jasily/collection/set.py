@@ -8,11 +8,11 @@
 from typing import Set
 from collections.abc import MutableSet
 
-from .comparer import IEqualityComparer, ObjectWrapper, ObjectEqualityComparer
+from .comparer import IEqualityComparer, ObjectWrapper, ObjectComparer
 
 class HashSet(MutableSet):
     def __init__(self, comparer: IEqualityComparer = None):
-        self._comparer = comparer or ObjectEqualityComparer()
+        self._comparer = comparer or ObjectComparer()
         self._data: Set[ObjectWrapper] = set()
 
     def add(self, value):

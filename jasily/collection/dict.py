@@ -8,11 +8,11 @@
 from typing import Dict
 from collections.abc import MutableMapping
 
-from .comparer import IEqualityComparer, ObjectWrapper, ObjectEqualityComparer
+from .comparer import IEqualityComparer, ObjectWrapper, ObjectComparer
 
 class Dictionary(MutableMapping):
     def __init__(self, comparer: IEqualityComparer = None):
-        self._comparer = comparer or ObjectEqualityComparer()
+        self._comparer = comparer or ObjectComparer()
         self._data: Dict[ObjectWrapper, object] = {}
 
     def __getitem__(self, key):

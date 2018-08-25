@@ -26,17 +26,6 @@ class IEqualityComparer:
         raise NotImplementedError
 
 
-class ObjectEqualityComparer(IEqualityComparer):
-    '''
-    the default comparer implemention for object.
-    '''
-    def hash(self, obj):
-        return hash(obj)
-
-    def eq(self, obj1, obj2):
-        return obj1 == obj2
-
-
 class ObjectWrapper:
     '''
     wrap a object with given equality comparer.
@@ -65,9 +54,24 @@ class ObjectWrapper:
         return self._comparer.eq(self._obj, other.unwrap())
 
 
-class IgnoreCaseStringEqualityComparer(IEqualityComparer):
+class ObjectComparer(IEqualityComparer):
+    '''
+    the default comparer implemention for object.
+    '''
+    def hash(self, obj):
+        return hash(obj)
+
+    def eq(self, obj1, obj2):
+        return obj1 == obj2
+
+
+class IgnoreCaseStringComparer(IEqualityComparer):
     def hash(self, obj: str):
         return hash(obj.upper())
 
     def eq(self, obj1: str, obj2: str):
         return obj1.upper() == obj2.upper()
+
+
+class StringComparer:
+    IgnoreCaseComparer = IgnoreCaseStringComparer()
