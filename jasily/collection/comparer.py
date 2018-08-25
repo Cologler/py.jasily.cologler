@@ -7,7 +7,7 @@
 
 from abc import abstractmethod
 
-class IComparer:
+class IEqualityComparer:
     '''
     the comparer interface.
     '''
@@ -26,7 +26,7 @@ class IComparer:
         raise NotImplementedError
 
 
-class ObjectComparer(IComparer):
+class ObjectEqualityComparer(IEqualityComparer):
     '''
     the default comparer implemention for object.
     '''
@@ -37,12 +37,12 @@ class ObjectComparer(IComparer):
         return obj1 == obj2
 
 
-class Wrap:
+class ObjectWrapper:
     '''
-    wrap a object with given comparer.
+    wrap a object with given equality comparer.
     '''
 
-    def __init__(self, comparer, obj):
+    def __init__(self, comparer: IEqualityComparer, obj):
         self._comparer = comparer
         self._obj = obj
 
@@ -62,7 +62,7 @@ class Wrap:
         return self._comparer.eq(self._obj, other.unwrap())
 
 
-class IgnoreCaseStringComparer(IComparer):
+class IgnoreCaseStringEqualityComparer(IEqualityComparer):
     def hash(self, obj: str):
         return hash(obj.upper())
 

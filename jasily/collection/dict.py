@@ -8,21 +8,21 @@
 from typing import Dict
 from collections.abc import MutableMapping
 
-from .comparer import IComparer, Wrap, ObjectComparer
+from .comparer import IEqualityComparer, ObjectWrapper, ObjectEqualityComparer
 
 class Dictionary(MutableMapping):
-    def __init__(self, comparer: IComparer = None):
-        self._comparer = comparer or ObjectComparer()
-        self._data: Dict[Wrap, object] = {}
+    def __init__(self, comparer: IEqualityComparer = None):
+        self._comparer = comparer or ObjectEqualityComparer()
+        self._data: Dict[ObjectWrapper, object] = {}
 
     def __getitem__(self, key):
-        return self._data[Wrap(self._comparer, key)]
+        return self._data[ObjectWrapper(self._comparer, key)]
 
     def __setitem__(self, key, value):
-        self._data[Wrap(self._comparer, key)] = value
+        self._data[ObjectWrapper(self._comparer, key)] = value
 
     def __delitem__(self, key):
-        del self._data[Wrap(self._comparer, key)]
+        del self._data[ObjectWrapper(self._comparer, key)]
 
     def __iter__(self):
         for wraped_key in self._data:
