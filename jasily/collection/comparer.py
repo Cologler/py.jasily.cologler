@@ -45,6 +45,7 @@ class ObjectWrapper:
     def __init__(self, comparer: IEqualityComparer, obj):
         self._comparer = comparer
         self._obj = obj
+        self._hashcode = None
 
     def unwrap(self):
         '''
@@ -53,7 +54,9 @@ class ObjectWrapper:
         return self._obj
 
     def __hash__(self):
-        return self._comparer.hash(self._obj)
+        if self._hashcode is None:
+            self._hashcode = self._comparer.hash(self._obj)
+        return self._hashcode
 
     def __eq__(self, other):
         '''
