@@ -72,3 +72,25 @@ def test_model_has_other_fields():
     # not strict mode
     obj: Model = from_dict(Model, input_data, strict=False)
     assert obj.a == 15
+
+def test_model_with_slots():
+    class Model:
+        __slots__ = ('name')
+        name: str
+        value: int
+
+    input_data = {
+        'name': 'some-one'
+    }
+
+    obj: Model = from_dict(Model, input_data)
+    assert obj.name == input_data['name']
+    assert not hasattr(obj, '__dict__')
+
+    with raises(AttributeError, match="'Model' object has no attribute 'value'"):
+        from_dict(Model, {
+            'name': 'some-one',
+            'value': 15
+        })
+
+    assert to_dict(obj) == input_data
