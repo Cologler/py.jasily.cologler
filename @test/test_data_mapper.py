@@ -5,38 +5,70 @@
 #
 # ----------
 
+from pytest import raises
+
 from jasily.data.mapper import from_dict, to_dict
 
-class Model1:
-    a: int
-    b: str
+def test_simple_model():
+    class Model:
+        a: int
 
-    def f1(self):
-        pass
+    input_data = {
+        'a': 15
+    }
 
-    @property
-    def f2(self):
-        pass
+    obj: Model = from_dict(Model, input_data)
+    assert isinstance(obj, Model)
 
-class Model2:
-    c: Model1
+    # ensure attr not in class
+    with raises(AttributeError):
+        _ = Model.a
+    # ensure attr in instance
+    assert obj.a == input_data['a']
+    assert obj.__dict__ == input_data
 
-def test_from_dict():
-    obj: Model2 = from_dict(Model2, {
-        'c': {
-            'a': 1,
-            'b': '2'
-        }
-    })
-    assert obj.c.a == 1
-    assert obj.c.b == '2'
+    assert to_dict(obj) == input_data
 
-def test_to_dict():
-    obj = Model2()
-    obj.c = Model1()
-    obj.c.a = 1
-    assert to_dict(obj) == {
-        'c': {
-            'a': 1,
+def test_deep_model():
+    class Model1:
+        f1: int
+
+    class Model2:
+        f2: Model1
+
+    input_data = {
+        'f2': {
+            'f1': 1,
         }
     }
+
+    obj: Model2 = from_dict(Model2, input_data)
+    assert isinstance(obj, Model2)
+    assert isinstance(obj.f2, Model1)
+    assert obj.f2.f1 == 1
+    assert to_dict(obj) == input_data
+
+def test_empty_model():
+    class Model:
+        pass
+
+    data = to_dict(Model())
+    assert data == {}
+
+    # should not raise:
+    from_dict(Model, {})
+
+def test_model_has_other_fields():
+    class Model:
+        pass
+
+    input_data = {
+        'a': 15
+    }
+
+    with raises(TypeError):
+        from_dict(Model, input_data)
+
+    # not strict mode
+    obj: Model = from_dict(Model, input_data, strict=False)
+    assert obj.a == 15
