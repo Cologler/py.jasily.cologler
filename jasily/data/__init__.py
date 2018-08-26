@@ -6,4 +6,3 @@
 # ----------
 
 from .box import Box
-from .strongly_typed import make_strongly_typed
