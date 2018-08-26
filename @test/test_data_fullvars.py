@@ -27,3 +27,16 @@ def test_fullvars_for_slots():
     obj.name = 'wtv'
     assert proxy
     assert proxy['name'] == 'wtv'
+
+def test_fullvars_for_string_slots():
+    class Class:
+        __slots__ = 'name'
+
+    obj = Class()
+    proxy = fullvars(obj)
+    # not cache:
+    assert proxy is not fullvars(obj)
+    assert not proxy
+    obj.name = 'wtv'
+    assert proxy
+    assert proxy['name'] == 'wtv'
