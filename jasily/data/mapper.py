@@ -80,6 +80,9 @@ class Mapper:
         type_hints = get_type_hints(type(obj))
         obj_dict = fullvars(obj)
         for key in obj_dict:
+            options = self._attrs.get(key, self._DEF_OPTIONS)
+            if options.is_ignored:
+                continue
             if key in type_hints:
                 value = obj_dict[key]
                 if not isinstance(value, self.direct_types):
