@@ -20,13 +20,13 @@ class TestStringTypeConverter(unittest.TestCase):
     Converter = StringTypeConverter()
 
     def test_expect_NOT_type(self):
-        with self.assertRaises(ArgumentTypeException):
+        with self.assertRaises(TypeError):
             self.Converter.convert(None, 1)
-        with self.assertRaises(ArgumentTypeException):
+        with self.assertRaises(TypeError):
             self.Converter.convert('None', 1)
 
     def test_expect_NOT_value(self):
-        with self.assertRaises(ArgumentTypeException):
+        with self.assertRaises(TypeError):
             self.Converter.convert(str, 1)
 
     def test_expect_NOT_support(self):

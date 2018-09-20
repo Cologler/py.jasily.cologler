@@ -8,7 +8,6 @@
 
 import os
 
-from ..g import global_type
 from .wrappers import wrap
 
 
@@ -16,7 +15,7 @@ class Descriptor:
     def __init__(self, obj):
         self._obj = obj
         self._name: str = None
-        self._type: global_type = None
+        self._type: type = None
         self._alias: list = None
         self._doc: str = getattr(obj, '__doc__', '')
 

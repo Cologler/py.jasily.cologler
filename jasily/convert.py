@@ -6,7 +6,6 @@
 # jasily base.
 # ----------
 
-from .g import global_type
 from .exceptions import BaseException, ArgumentTypeException
 from .objects import uint
 
@@ -30,14 +29,14 @@ class Converter:
     def _to_self(self, value):
         return value
 
-    def to(self, type, value):
+    def to(self, type_, value):
         '''
         raise ConvertError if convert error.
         raise NotImplementedError if not support convert
         '''
-        if type == self._type:
+        if type_ == self._type:
             return self._to_self(value)
-        conv_func = self._to.get(type)
+        conv_func = self._to.get(type_)
         if conv_func:
             try:
                 return conv_func(value)
@@ -57,7 +56,7 @@ class Converter:
         '''
         source = cls._cached
         ret = source.get(source_type)
-        if ret != None:
+        if ret:
             return ret
         if source_type == str:
             ret = StringConverter()
@@ -115,8 +114,8 @@ class TypeConvertException(BaseException):
 
 class TypeConverter:
     def __init__(self, from_type):
-        if not isinstance(from_type, global_type):
-            raise ArgumentTypeException(global_type, from_type)
+        if not isinstance(from_type, type):
+            raise TypeError
 
         self._type = from_type
         self._convmap = {}
@@ -131,29 +130,29 @@ class TypeConverter:
     def _to_self(self, value):
         return value
 
-    def can_convert_type(self, type):
-        func = self._convmap.get(type)
-        return func != None
+    def can_convert_type(self, type_):
+        func = self._convmap.get(type_)
+        return func is not None
 
-    def convert(self, type, value):
+    def convert(self, type_, value):
         '''
         raise `TypeNotSupportException` is cannot convert;\n
         raise `TypeConvertException` is convert failed;
         '''
-        if not isinstance(type, global_type):
-            raise ArgumentTypeException(global_type, type)
+        if not isinstance(type_, type):
+            raise TypeError
         if not isinstance(value, self._type):
-            raise ArgumentTypeException(self._type, value)
+            raise TypeError
 
-        func = self._convmap.get(type)
+        func = self._convmap.get(type_)
         if func is None:
-            raise TypeNotSupportException(self._type, type)
+            raise TypeNotSupportException(self._type, type_)
         try:
             return func(value)
         except TypeConvertException:
             raise
         except Exception as err:
-            raise TypeConvertException(value, type, internal_error=err)
+            raise TypeConvertException(value, type_, internal_error=err)
 
 
 class StringTypeConverter(TypeConverter):
