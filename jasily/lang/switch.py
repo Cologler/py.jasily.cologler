@@ -73,40 +73,37 @@ class switch(object):
 
         return self.match_args(self._value, args)
 
-    def case(self, value, *args):
-        if not args:
+    def case(self, ret, *matches):
+        return _Case(self._value).case(ret, *matches)
+
+
+class _Case:
+    __slots__ = ('_switch_value')
+
+    def __init__(self, switch_value):
+        self._switch_value = switch_value
+
+    def case(self, ret, *matches):
+        if not matches:
             raise SyntaxError('cannot case empty pattern.')
+        if switch.match_args(self._switch_value, matches):
+            return _CaseFinally(ret)
+        return self
 
-        test_value = self._value
+    def default(self, ret):
+        return ret
 
-        class ICase:
-            def default(self, value):
-                return value
 
-        class Case(ICase):
+class _CaseFinally:
+    __slots__ = ('_value')
 
-            def case(self, value, *args):
-                if not args:
-                    raise SyntaxError('cannot case empty pattern.')
+    def __init__(self, value):
+        self._value = value
 
-                if switch.match_args(test_value, args):
-                    return ResultCase(value)
-                else:
-                    return CASE
+    def case(self, ret, *matches):
+        if not matches:
+            raise SyntaxError('cannot case empty pattern.')
+        return self
 
-        CASE = Case()
-
-        class ResultCase(ICase):
-            def __init__(self, value):
-                self._value = value
-
-            def case(self, value, *args):
-                if not args:
-                    raise SyntaxError('cannot case empty pattern.')
-
-                return self
-
-            def default(self, value):
-                return self._value
-
-        return CASE.case(value, *args)
+    def default(self, ret):
+        return self._value
