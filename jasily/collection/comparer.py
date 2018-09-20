@@ -30,6 +30,7 @@ class ObjectWrapper:
     '''
     wrap a object with given equality comparer.
     '''
+    __slots__ = ('_comparer', '_obj', '_hashcode')
 
     def __init__(self, comparer: IEqualityComparer, obj):
         self._comparer = comparer
