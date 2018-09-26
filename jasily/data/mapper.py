@@ -86,7 +86,7 @@ class Mapper:
             if key in type_hints:
                 value = obj_dict[key]
                 if not isinstance(value, self.direct_types):
-                    value = to_dict(value)
+                    value = self.to_dict(value)
                 new_dict[key] = value
         return new_dict
 
