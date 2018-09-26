@@ -18,11 +18,15 @@ class Box:
 
     @property
     def has_value(self):
+        '''
+        get whether has value or not.
+        '''
         return self._value is not None
 
     @property
     def value(self):
-        return self._value[0] if self._value else None
+        ref = self._value
+        return ref[0] if ref else None
 
     @value.setter
     def value(self, new_val):
@@ -32,9 +36,17 @@ class Box:
         self._value = None
 
     def get(self, default):
-        return self._value[0] if self._value else default
+        '''
+        get value or `default` if value is unset.
+        '''
+        ref = self._value
+        return ref[0] if ref else default
 
     def load_from_dict(self, src: dict, key):
+        '''
+        try load value from dict.
+        if key is not exists, mark as state unset.
+        '''
         if key in src:
             self.value = src[key]
         else:
