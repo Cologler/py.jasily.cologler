@@ -30,6 +30,10 @@ class _SlotsProxy(MutableMapping):
         return len(list(iter(self)))
 
 def fullvars(obj):
+    '''
+    like `vars()` but support `__slots__`.
+    '''
+
     try:
         return vars(obj)
     except TypeError:
