@@ -6,15 +6,17 @@
 #
 # ----------
 
+from typing import Optional, Tuple, Any
+
 class Box:
     '''
     `Box` is a class to describe is a field has value or not.
 
-    This is useful for some field which vaild value canbe `None` or other any special value.
+    This is useful for some field which vaild value canbe `None` or other any special values.
     '''
 
     def __init__(self):
-        self._value = None # `None` or tuple.
+        self._value: Optional[Tuple[Any]] = None
 
     @property
     def has_value(self):
@@ -26,7 +28,9 @@ class Box:
     @property
     def value(self):
         ref = self._value
-        return ref[0] if ref else None
+        if ref:
+            return ref[0]
+        raise RuntimeError('the box is empty')
 
     @value.setter
     def value(self, new_val):
@@ -35,7 +39,7 @@ class Box:
     def reset(self):
         self._value = None
 
-    def get(self, default):
+    def get(self, default=None):
         '''
         get value or `default` if value is unset.
         '''

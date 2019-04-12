@@ -5,6 +5,8 @@
 #
 # ----------
 
+from pytest import raises
+
 from jasily.data.box import Box
 
 def assert_has_value(box: Box, value):
@@ -13,7 +15,9 @@ def assert_has_value(box: Box, value):
 
 def assert_no_value(box: Box):
     assert box.has_value is False
-    assert box.value is None
+    assert box.get() is None
+    with raises(RuntimeError):
+        _ = box.value
 
 def test_box_init_state():
     box = Box()
