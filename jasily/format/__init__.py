@@ -5,9 +5,3 @@
 # ----------
 #
 # ----------
-
-from .json_impl import JsonSerializer
-
-__all__ = [
-    'JsonSerializer'
-]
