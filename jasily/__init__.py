@@ -5,19 +5,3 @@
 # ----------
 # jasily base.
 # ----------
-
-import os
-
-from .exceptions import InvalidOperationException
-from .lang import (
-    prop,
-    switch
-)
-
-def pip_require(module_name, pip_name=None):
-    '''auto call `pip install` if module not install.'''
-    try:
-        __import__(module_name)
-    except ImportError:
-        if os.system('pip install ' + pip_name or module_name) != 0:
-            raise ImportError('can not found module call ' + module_name)

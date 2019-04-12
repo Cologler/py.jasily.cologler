@@ -10,7 +10,8 @@ import os
 import sys
 import traceback
 import unittest
-from jasily import prop
+
+from jasily.lang import prop
 
 # pylint: disable=E1101, W0212
 class Class1:
