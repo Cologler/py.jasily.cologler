@@ -6,7 +6,7 @@
 #
 # ----------
 
-from .prop import prop
+from .props import prop
 from .switch import switch
 from .with_any import with_it, with_objattr, with_objattrs
 

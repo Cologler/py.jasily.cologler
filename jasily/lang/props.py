@@ -6,29 +6,6 @@
 #
 # ----------
 
-
-'''
-`prop` is a sugar for `property`.
-
-``` py
-@prop
-def value(self):
-    pass
-```
-
-As same as
-
-``` py
-@property
-def value(self):
-    return self._value
-
-@value.setter
-def value(self, val):
-    self._value = val
-```
-'''
-
 _UNSET = object()
 
 def prop(func=None, *,
@@ -40,19 +17,18 @@ def prop(func=None, *,
     `prop` is a sugar for `property`.
 
     ``` py
-    # mode 1
-    @prop # equal `@prop(field='_value', get=True, set=True)`
-    def value(self): pass
+    @prop
+    def value(self):
+        pass
 
-    # full kwargs
-    @prop(field: str = '_value',
-          get: bool = True,
-          set: bool = True,
-          del_: bool = False,
-          default: any = AttributeError,
-          types: tuple = any, # use `isinstance()` to type checked.
-          )
-    def value(self): pass
+    # equals:
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        self._value = val
     ```
     '''
 

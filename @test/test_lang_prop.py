@@ -7,7 +7,7 @@
 
 import pytest
 
-from jasily.lang.prop import prop
+from jasily.lang import prop
 
 def test_prop_default():
     class SomeClass:
