@@ -7,7 +7,7 @@
 
 import pytest
 
-from jasily.lang import prop
+from jasily.lang.props import prop, get_only
 
 def test_prop_default():
     class SomeClass:
@@ -59,3 +59,12 @@ def test_field_name_equals_property_name():
 
     obj.value = 1
     assert obj.value == 1
+
+def test_get_only():
+    class Any:
+        value = get_only('_value')
+
+        def __init__(self):
+            self._value = 2
+
+    assert Any().value == 2

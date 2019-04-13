@@ -3,13 +3,13 @@
 #
 # Copyright (c) 2017~2999 - cologler <skyoflw@gmail.com>
 # ----------
-#
+# provide different ways for make propertys.
 # ----------
 
 _UNSET = object()
 
 def prop(func=None, *,
-         field: str = _UNSET,
+         field = _UNSET,
          get: bool = True, set: bool = True, del_: bool = False,
          default = _UNSET,
          types: tuple = _UNSET):
@@ -22,6 +22,7 @@ def prop(func=None, *,
         pass
 
     # equals:
+
     @property
     def value(self):
         return self._value
@@ -44,17 +45,16 @@ def prop(func=None, *,
         fget, fset, fdel = None, None, None
 
         if get:
-            def getter(self):
+            def fget(self):
                 try:
                     return self.__dict__[key]
                 except KeyError:
                     if default is not _UNSET:
                         return default
                     raise AttributeError(f"'{type(self).__name__}' object has no attribute '{key}'")
-            fget = getter
 
         if set:
-            def setter(self, val):
+            def fset(self, val):
                 if types is not _UNSET and not isinstance(val, types):
                     if isinstance(types, tuple):
                         types_name = tuple(x.__name__ for x in types)
@@ -63,13 +63,27 @@ def prop(func=None, *,
                     raise TypeError(f'type of {type(self).__name__}.{prop_name} must be {types_name}; '
                                     f'got {type(val).__name__} instead')
                 self.__dict__[key] = val
-            fset = setter
 
         if del_:
-            def delete(self):
+            def fdel(self):
                 del self.__dict__[key]
-            fdel = delete
 
         return property(fget, fset, fdel, func.__doc__)
 
     return wrap(func) if func else wrap
+
+def get_only(field):
+    '''
+    `get_only` is a sugar for `property`.
+
+    ``` py
+    value = get_only('_value')
+
+    # equals:
+
+    @property
+    def value(self):
+        return getattr(self, '_value')
+    ```
+    '''
+    return property(lambda self: getattr(self, field))
