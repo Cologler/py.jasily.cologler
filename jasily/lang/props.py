@@ -87,3 +87,23 @@ def get_only(field):
     ```
     '''
     return property(lambda self: getattr(self, field))
+
+def get_onlys(*fields):
+    '''
+    `get_onlys` is a sugar for multi-`property`.
+
+    ``` py
+    name, age = get_onlys('_name', '_age')
+
+    # equals:
+
+    @property
+    def name(self):
+        return getattr(self, '_name')
+
+    @property
+    def age(self):
+        return getattr(self, '_age')
+    ```
+    '''
+    return tuple(property(lambda self, f=f: getattr(self, f)) for f in fields)

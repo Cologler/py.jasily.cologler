@@ -7,7 +7,10 @@
 
 import pytest
 
-from jasily.lang.props import prop, get_only
+from jasily.lang.props import (
+    prop,
+    get_only, get_onlys,
+)
 
 def test_prop_default():
     class SomeClass:
@@ -68,3 +71,14 @@ def test_get_only():
             self._value = 2
 
     assert Any().value == 2
+
+def test_get_onlys():
+    class Any:
+        name, age = get_onlys('_name', '_age')
+
+        def __init__(self):
+            self._name = 'anna'
+            self._age = 18
+
+    assert Any().name == 'anna'
+    assert Any().age == 18
