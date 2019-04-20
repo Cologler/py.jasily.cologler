@@ -14,6 +14,7 @@ class Box:
 
     This is useful for some field which vaild value canbe `None` or other any special values.
     '''
+    __slots__ = ('_value')
 
     def __init__(self):
         self._value: Optional[Tuple[Any]] = None
