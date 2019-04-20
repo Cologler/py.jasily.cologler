@@ -19,23 +19,31 @@ class IEqualityComparer:
         raise NotImplementedError
 
     @abstractmethod
-    def eq(self, obj1, obj2):
+    def eq(self, cmpvalue_1, cmpvalue_2):
         '''
         compare two value is equals or not.
         '''
         raise NotImplementedError
+
+    def get_cmpvalue(self, obj):
+        '''
+        get the cmpvalue use for eq compare.
+        this is help to cache some value like `str.upper()`.
+        '''
+        return obj
 
 
 class ObjectWrapper:
     '''
     wrap a object with given equality comparer.
     '''
-    __slots__ = ('_comparer', '_obj', '_hashcode')
+    __slots__ = ('_comparer', '_obj', '_hashcode', '_cmpvalue')
 
     def __init__(self, comparer: IEqualityComparer, obj):
         self._comparer = comparer
         self._obj = obj
         self._hashcode = None
+        self._cmpvalue = None
 
     def unwrap(self):
         '''
@@ -48,11 +56,16 @@ class ObjectWrapper:
             self._hashcode = self._comparer.hash(self._obj)
         return self._hashcode
 
+    def get_cmpvalue(self):
+        if self._cmpvalue is None:
+            self._cmpvalue = (self._comparer.get_cmpvalue(self._obj), )
+        return self._cmpvalue
+
     def __eq__(self, other):
         '''
         note: user should ensure other is instance of Wrap.
         '''
-        return self._comparer.eq(self._obj, other.unwrap())
+        return self._comparer.eq(self.get_cmpvalue(), other.get_cmpvalue())
 
 
 class ObjectComparer(IEqualityComparer):
@@ -70,8 +83,11 @@ class IgnoreCaseStringComparer(IEqualityComparer):
     def hash(self, obj: str):
         return hash(obj.upper())
 
-    def eq(self, obj1: str, obj2: str):
-        return obj1.upper() == obj2.upper()
+    def eq(self, cmpvalue_1, cmpvalue_2):
+        return cmpvalue_1 == cmpvalue_1
+
+    def get_cmpvalue(self, obj: str):
+        return obj.upper()
 
 
 class StringComparer:
