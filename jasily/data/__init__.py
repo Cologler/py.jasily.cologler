@@ -1,10 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2017 - cologler <skyoflw@gmail.com>
+# Copyright (c) 2018~2999 - Cologler <skyoflw@gmail.com>
 # ----------
 #
 # ----------
 
-import os
-
+from .box import Box

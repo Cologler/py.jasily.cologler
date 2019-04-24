@@ -6,101 +6,96 @@
 # build-in Exceptions
 # ----------
 
+from inspect import Parameter
 from .utils import jrepr
 
 
-class JasilyBaseException(Exception):
-    def __init__(self, internal_error: str=None,
-                 *args, **kwargs):
+class BaseException(Exception):
+    def __init__(self, message: str=None, inner_exception=None, *args, **kwargs):
         super().__init__(*args)
-        self._internal_error = internal_error
+        self._message = message
+        self._inner_exception = inner_exception
         self._kwargs = kwargs
 
     def __str__(self):
-        return '<%s> %s' % (type(self).__name__, self.message)
+        return '{}: {}'.format(type(self).__name__, self.message)
 
     @property
     def message(self):
-        return ''
+        return self._message or ''
 
     @property
     def kwargs(self):
         return self._kwargs
 
 
-class MessageException(JasilyBaseException):
-    def __init__(self, message: str,
+class ArgumentException(BaseException):
+    '''base Exception for argument error.'''
+    def __init__(self,
+                 message: str,
+                 parameter: (Parameter, str)=None,
+                 inner_exception=None,
                  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._message = message
-
-    @property
-    def message(self):
-        return (self._message  or '').format(**self.kwargs)
-
-    def __str__(self):
-        return self.message
-
-
-class ArgumentException(MessageException):
-    '''a Exception for argument error.'''
-    def __init__(self, name: str, message: str, *args, **kwargs):
-        super().__init__(message, *args, **kwargs)
+        super().__init__(message, inner_exception=inner_exception, *args, **kwargs)
+        name = self._get_parameter_name(parameter)
         self._name = name
-        self.kwargs['name'] = name
-        self.kwargs['parameter_name'] = name
 
     @property
     def name(self):
-        '''The name of parameter.'''
+        '''The name of parameter. canbe null.'''
         return self._name
+
+    def _get_parameter_name(self, parameter: (Parameter, str)=None):
+        if parameter is None:
+            return None
+        elif isinstance(parameter, Parameter):
+            return parameter.name
+        else:
+            return str(parameter)
 
 
 class ArgumentValueException(ArgumentException):
-    def __init__(self, name: str, value, message: str, *args, **kwargs):
-        '''you can use {value} to format value.'''
-        super().__init__(name, message, *args, **kwargs)
-        self._value = value
-        self.kwargs['value'] = jrepr(value)
+    pass
 
 
 class ArgumentNoneException(ArgumentValueException):
-    def __init__(self, name: str, message: str=None, *args, **kwargs):
-        message = message or 'parameter <{name}> cannot be `None`.'
-        super().__init__(name, None, message)
+    def __init__(self, message: str=None, *args, **kwargs):
+        message = message or 'parameter <{}> cannot be `None`.'
+        super().__init__(message)
 
 
 class ArgumentTypeException(ArgumentException):
-    def __init__(self, except_type, actual_value,
+    def __init__(self,
+                 except_type, actual_value,
+                 parameter: (Parameter, str)=None,
                  *args, **kwargs):
         if not isinstance(except_type, type):
             raise ArgumentTypeException(type, except_type)
+        param_name = self._get_parameter_name(parameter)
+        if param_name is None:
+            msg = 'param value type error:'
+        else:
+            msg = 'param <{}> value type error:'.format(param_name)
         actual_type = "'None'" if actual_value is None else type(actual_value).__name__
-        fmtext = 'param <{name}> value type error:'
-        fmtext += ' (expected <{except_type}>, got <{actual_type}>)'
-        fmtext = 'param <{name}> value type error:' +\
-                 ' (expected <{except_type}>, got <{actual_type}>)'
-        super().__init__(fmtext,
-                         parameter_name=kwargs.get('name', '?'),
-                         except_type=except_type.__name__,
-                         actual_type=actual_type,
-                         *args, **kwargs)
+        except_type = except_type.__name__
+        msg += ' (expected <{}>, got <{}>)'.format(except_type, actual_type)
+        super().__init__(msg, parameter=param_name)
 
 
-class InvalidArgumentException(MessageException):
+class InvalidArgumentException(BaseException):
     def __init__(self, parameter_name: str,
                  *args, **kwargs):
         super().__init__('', parameter_name, *args, **kwargs)
 
 
-class ApiNotSupportException(MessageException):
+class ApiNotSupportException(BaseException):
     '''
     this is a little like `NotImplementedError`,
     but we donot want to impl it.
     '''
 
 
-class InvalidOperationException(MessageException):
+class InvalidOperationException(BaseException):
     '''a Exception define for invalid operation.'''
     def __init__(self, message: str=None,
                  *args, **kwargs):

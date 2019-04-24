@@ -6,34 +6,6 @@
 #
 # ----------
 
-import os
-from setuptools import setup, find_packages
+from setupmeta_builder import setup_it
 
-VERSION = '0.1.2.2'
-DESCRIPTION = ''
-
-long_description = None
-
-if os.path.isfile('README.md'):
-    with open('README.md') as f:
-        long_description = f.read()
-
-long_description = long_description or DESCRIPTION
-
-setup(
-    name = 'jasily',
-    version = VERSION,
-    description = DESCRIPTION,
-    long_description = long_description or DESCRIPTION,
-    classifiers = [],
-    keywords = 'python',
-    author = 'cologler',
-    author_email='skyoflw@gmail.com',
-    url = 'https://github.com/Jasily/jasily-python',
-    license = 'MIT',
-    packages = find_packages(),
-    include_package_data = True,
-    zip_safe = True,
-    install_requires = [],
-    entry_points = {},
-)
+setup_it()
