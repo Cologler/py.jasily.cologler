@@ -5,22 +5,22 @@
 #
 # ----------
 
-class BaseClass:
+class SubClassMixin:
     __subclasses = {}
 
     def __init_subclass__(cls, *_, **_k):
         for base in cls.__mro__[:-1]:
-            if issubclass(base, BaseClass):
+            if issubclass(base, SubClassMixin):
                 try:
-                    scs = BaseClass.__subclasses[base]
+                    scs = SubClassMixin.__subclasses[base]
                 except KeyError:
-                    scs = BaseClass.__subclasses.setdefault(base, [])
+                    scs = SubClassMixin.__subclasses.setdefault(base, [])
                 scs.append(cls)
 
     @staticmethod
     def subclasses_of(base):
-        return tuple(BaseClass.__subclasses[base])
+        return tuple(SubClassMixin.__subclasses[base])
 
     @classmethod
     def subclasses(cls):
-        return BaseClass.subclasses_of(cls)
+        return SubClassMixin.subclasses_of(cls)

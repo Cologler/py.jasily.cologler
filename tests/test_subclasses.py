@@ -5,16 +5,16 @@
 #
 # ----------
 
-from jasily.subclasses import BaseClass
+from jasily.subclasses import SubClassMixin
 
 def test_subclass():
-    class A(BaseClass):
+    class A(SubClassMixin):
         pass
 
     assert A.subclasses() == (A, )
 
 def test_subclass_subsubclass():
-    class A(BaseClass):
+    class A(SubClassMixin):
         pass
 
     class B(A):
