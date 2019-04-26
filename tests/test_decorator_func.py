@@ -18,6 +18,7 @@ def test_once():
     def func():
         nonlocal time
         time += 1
+        return 100
 
     assert func() is None
     assert func() is None
@@ -31,6 +32,7 @@ def test_assert_once():
     def func():
         nonlocal time
         time += 1
+        return 100
 
     assert func() is None
     with pytest.raises(AssertionError):
