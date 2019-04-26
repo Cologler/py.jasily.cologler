@@ -35,3 +35,18 @@ class char(str):
         return ord(self[0])
 
 Char = char
+
+
+class Key(object):
+    '''a object key to support sort (in `dir`).'''
+    __slots__ = ()
+
+    def __gt__(self, other):
+        if type(other) is Key:
+            return id(self) > id(other)
+        return True
+
+    def __lt__(self, other):
+        if type(other) is Key:
+            return id(self) < id(other)
+        return False

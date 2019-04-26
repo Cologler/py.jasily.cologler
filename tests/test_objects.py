@@ -8,7 +8,7 @@
 
 from pytest import raises
 
-from jasily.objects import uint, char
+from jasily.objects import uint, char, Key
 
 def test_uint():
     with raises(ValueError):
@@ -35,3 +35,16 @@ def test_char():
     assert char(0) == chr(0)
     assert char(5) == chr(5)
     assert char(10) == chr(10)
+
+def test_key():
+    class Any:
+        pass
+
+    any_with_obj = Any()
+    vars(any_with_obj)[object()] = 15
+    with raises(TypeError):
+        dir(any_with_obj)
+
+    any_with_key = Any()
+    vars(any_with_key)[Key()] = 15
+    dir(any_with_key)
