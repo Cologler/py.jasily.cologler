@@ -6,6 +6,8 @@
 # the missing
 # ----------
 
+import functools
+
 class uint(int):
     '''
     the unsigned integer.
@@ -37,16 +39,19 @@ class char(str):
 Char = char
 
 
+@functools.total_ordering
 class Key(object):
     '''a object key to support sort (in `dir`).'''
     __slots__ = ()
 
     def __gt__(self, other):
-        if type(other) is Key:
+        if isinstance(other, Key):
+            # only compare with type Key
             return id(self) > id(other)
         return True
 
-    def __lt__(self, other):
-        if type(other) is Key:
-            return id(self) < id(other)
-        return False
+    def __hash__(self):
+        return super().__hash__()
+
+    def __eq__(self, value):
+        return super().__eq__(value)
