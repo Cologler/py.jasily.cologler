@@ -7,6 +7,9 @@
 
 from abc import ABC, abstractmethod
 import typing
+import threading
+
+from ..lang import with_objattr
 
 from .box import Box
 
@@ -40,6 +43,46 @@ class IVar(ABC, typing.Generic[T]):
     def set_default(self, value):
         '''set value if does not exists.'''
         raise NotImplementedError
+
+    def sync(self):
+        '''get a synced version var for this var.'''
+        return SyncedVar(self)
+
+
+class SyncedVar(IVar):
+    def __init__(self, base_var):
+        self._base_var: IVar = base_var
+        self._lock = threading.Lock()
+
+    @property
+    @with_objattr('_lock')
+    def has_value(self):
+        '''get whether var has value or not.'''
+        return self._base_var.has_value
+
+    @with_objattr('_lock')
+    def get(self, default=None):
+        '''get and value.'''
+        return self._base_var.get(default)
+
+    @with_objattr('_lock')
+    def pop(self, default=None):
+        '''get and remove value.'''
+        return self._base_var.pop(default)
+
+    @with_objattr('_lock')
+    def set(self, value):
+        '''set value.'''
+        return self._base_var.set(value)
+
+    @with_objattr('_lock')
+    def set_default(self, value):
+        '''set value if does not exists.'''
+        return self._base_var.set_default(value)
+
+    def sync(self):
+        '''get a synced version var for this var.'''
+        return self
 
 
 class BoxVar(IVar):
