@@ -42,7 +42,13 @@ Char = char
 @functools.total_ordering
 class Key(object):
     '''a object key to support sort (in `dir`).'''
-    __slots__ = ()
+    __slots__ = ('_name')
+
+    def __init__(self, name: str=''):
+        self._name = str(name)
+
+    def __repr__(self):
+        return f'Key({self._name})'
 
     def __gt__(self, other):
         if isinstance(other, Key):
