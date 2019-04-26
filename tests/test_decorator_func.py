@@ -7,7 +7,7 @@
 
 import pytest
 
-from jasily.decorators.funcs import (
+from jasily.decorator.func import (
     once, assert_once
 )
 
