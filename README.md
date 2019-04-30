@@ -1,8 +1,10 @@
 # Jasily
 
-a python solution, include links for other projects.
+Jasily is a python solution lab, which include a lot interesting experiment.
 
-## Work like CSharp
+## interesting libraries
+
+### Work like CSharp
 
 * delegate
   * [obsub](https://github.com/aepsil0n/obsub) - delegate for python
