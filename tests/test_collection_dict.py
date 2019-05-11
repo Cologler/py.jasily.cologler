@@ -7,18 +7,9 @@
 
 from pytest import raises
 
-from jasily.collection.comparer import StringComparer
 from jasily.collection.dict import (
-    Dictionary,
     AttrDict, DefAttrDict, AutoAttrDict
 )
-
-def test_dictionary():
-    test_dict = Dictionary(StringComparer.IgnoreCaseComparer)
-    test_dict['a'] = 1
-    assert test_dict['A'] == 1
-    assert len(test_dict) == 1
-    assert list(test_dict) == ['a']
 
 def _test_attr_dict(test_dict):
     size = len(test_dict)
