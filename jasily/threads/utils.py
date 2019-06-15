@@ -24,26 +24,48 @@ class SyncedBox:
             return self._value
 
 
-class Counter(SyncedBox):
+class Counter:
     '''thread safety counter.'''
 
-    def __init__(self, init_value=0):
-        super().__init__(init_value)
+    __slots__ = ('_value', '_lock', '__weakref__')
+
+    def __init__(self, init_value: int=0):
+        self._value = init_value
+        self._lock = threading.Lock()
 
     def incr(self, value=1):
-        '''return new value.'''
-        return self.do(lambda x: x + value)
+        '''
+        add value in this `Counter` and return current value.
+        '''
+        with self._lock:
+            self._value += value
+            return self._value
 
     def decr(self, value=1):
-        '''return new value.'''
-        return self.do(lambda x: x - value)
+        '''
+        sub value in this `Counter` and return current value.
+        '''
+        with self._lock:
+            self._value -= value
+            return self._value
+
+    def __iadd__(self, value):
+        self.incr(value)
+
+    def __isub__(self, value):
+        self.decr(value)
+
+    @property
+    def value(self):
+        with self._lock:
+            return self._value
 
     def __enter__(self):
-        self.incr()
+        self += 1
         return self
 
     def __exit__(self, *args):
-        self.decr()
+        self -= 1
         return False
 
     def __int__(self):
