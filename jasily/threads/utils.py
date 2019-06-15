@@ -8,21 +8,20 @@
 
 import threading
 
-from ..lang import with_objattr
-
 class SyncedBox:
     def __init__(self, init_value):
         self._value = init_value
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
-    @with_objattr('_lock')
     def do(self, func):
-        self._value = func(self._value)
-        return self._value
+        with self._lock:
+            self._value = func(self._value)
+            return self._value
 
     @property
     def value(self):
-        return self._value
+        with self._lock:
+            return self._value
 
 
 class Counter(SyncedBox):
